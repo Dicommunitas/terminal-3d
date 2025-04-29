@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal 3D - Protótipo</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Babylon.js CDN -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+    <script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
+    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
+    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    
+    <!-- Painel de camadas -->
+    <div id="layerPanel" class="panel">
+        <h3>Camadas</h3>
+        <div class="layer-item">
+            <label>
+                <input type="checkbox" id="layerTanks" checked>
+                <span class="color-indicator" style="background-color: #0077be;"></span>
+                Tanques
+            </label>
+        </div>
+        <div class="layer-item">
+            <label>
+                <input type="checkbox" id="layerPipes" checked>
+                <span class="color-indicator" style="background-color: #888888;"></span>
+                Tubulações
+            </label>
+        </div>
+        <div class="layer-item">
+            <label>
+                <input type="checkbox" id="layerValves" checked>
+                <span class="color-indicator" style="background-color: #cc0000;"></span>
+                Válvulas
+            </label>
+        </div>
+        <div class="layer-item">
+            <label>
+                <input type="checkbox" id="layerLoading" checked>
+                <span class="color-indicator" style="background-color: #ffaa00;"></span>
+                Áreas de Carregamento
+            </label>
+        </div>
+<div class="layer-item">
+   <label>
+      <input type="checkbox" id="layerGround" checked>
+      <span class="color-indicator" style="background-color: #666666;"></span>
+      Terreno
+   </label>
+</div>
+
+        <hr>
+        <div class="layer-item">
+            <label for="colorMode">Modo de visualização:</label>
+            <select id="colorMode">
+                <option value="default">Coloração Padrão</option>
+                <option value="product">Por Produto</option>
+                <option value="status">Por Status</option>
+                <option value="temperature">Por Temperatura</option>
+            </select>
+        </div>
+        <hr>
+        <div class="controls">
+            <button id="resetCamera" class="btn">Resetar Câmera</button>
+            <button id="toggleInspector" class="btn">Inspetor</button>
+        </div>
+    </div>
+    
+    <!-- Painel de informações -->
+    <div id="infoPanel" class="panel">
+        <div class="info-header">
+            <h3 id="infoTitle">Informações do Equipamento</h3>
+            <button id="closeInfo" class="close-btn">×</button>
+        </div>
+        <div id="infoContent" class="info-content">
+            <!-- Conteúdo dinâmico -->
+        </div>
+        <div class="info-footer">
+            <button id="viewDetails" class="btn">Ver Detalhes</button>
+        </div>
+    </div>
+
+    <!-- Barra de status -->
+    <div id="statusBar">
+        <div id="coordinates">X: 0.00 Y: 0.00 Z: 0.00</div>
+        <div id="fpsCounter">FPS: 60</div>
+        <div id="selectedObject">Nenhum objeto selecionado</div>
+    </div>
+
+    <!-- Carregamento e mensagens -->
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Carregando Terminal 3D...</div>
+        </div>
+    </div>
+
+    <!-- Carregamento de scripts -->
+    <script src="data/equipment.js"></script>
+    
+    <!-- Utilitários -->
+    <script src="js/utils/picker.js"></script>
+    <script src="js/utils/colorMapping.js"></script>
+    
+    <!-- Módulos de interface -->
+    <script src="js/ui/layerPanel.js"></script>
+    <script src="js/ui/infoPanel.js"></script>
+    
+    <!-- Módulos de modelos -->
+    <script src="js/models/tanks.js"></script>
+    <script src="js/models/pipes.js"></script>
+    <script src="js/models/valves.js"></script>
+    <script src="js/models/loadingAreas.js"></script>
+    
+    <!-- Módulo de cena e aplicação -->
+    <script src="js/scene.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "terminal-3d-prototipo",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babylonjs/core": "^8.4.0",
+    "@babylonjs/gui": "^8.4.0",
+    "@babylonjs/inspector": "^8.4.0",
+    "@babylonjs/loaders": "^8.4.0",
+    "@babylonjs/materials": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
