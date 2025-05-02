@@ -1,0 +1,445 @@
+"use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PipesManager = void 0;
+const core_1 = require("@babylonjs/core");
+const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a interface de dados
+/**
+ * PipesManager - Gerenciador de tubulações
+ *
+ * Responsável por criar, modificar e gerenciar as tubulações
+ * na cena 3D do terminal, buscando dados do InMemoryDatabase.
+ * Com otimizações de performance (LOD, Instancing).
+ */
+class PipesManager {
+    /**
+     * Obtém a instância única do PipesManager (Singleton)
+     */
+    static getInstance() {
+        if (!PipesManager._instance) {
+            PipesManager._instance = new PipesManager();
+        }
+        return PipesManager._instance;
+    }
+    /**
+     * Construtor privado (Singleton)
+     */
+    constructor() {
+        this._pipesGroup = null;
+        this._pipeMeshes = new Map(); // Usar Map para acesso rápido por ID
+        // Meshes fonte para instancing
+        this._sourceMeshes = {};
+        this._instanceMaterials = {};
+        // Configurações para as tubulações (mantida para geometria)
+        this._pipeConfig = {
+            materials: {
+                standard: {
+                    color: new core_1.Color3(0.5, 0.5, 0.5), // Cinza
+                    roughness: 0.6,
+                    metallic: 0.7
+                },
+                insulated: {
+                    color: new core_1.Color3(0.8, 0.8, 0.8), // Cinza claro
+                    roughness: 0.8,
+                    metallic: 0.2
+                },
+                highTemp: {
+                    color: new core_1.Color3(0.6, 0.3, 0.3), // Vermelho escuro
+                    roughness: 0.5,
+                    metallic: 0.6
+                }
+            },
+            // Diâmetros padrão de tubulações (em unidades de cena)
+            diameters: {
+                small: 0.15, // 2-4 polegadas
+                medium: 0.3, // 6-8 polegadas
+                large: 0.5, // 10-12 polegadas
+                extraLarge: 0.8 // 16+ polegadas
+            },
+            // Segmentos para detalhamento dos tubos
+            tessellation: {
+                small: 8,
+                medium: 12,
+                large: 16,
+                extraLarge: 20,
+                // Segmentos reduzidos para LOD
+                lodSmall: 6,
+                lodMedium: 8,
+                lodLarge: 10,
+                lodExtraLarge: 12
+            },
+            // Distância para ativar LOD
+            lodDistance: 50
+        };
+    }
+    /**
+     * Inicializa o gerenciador de tubulações e cria meshes fonte
+     */
+    initialize() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this._pipesGroup = SceneManager.getGroup("pipes");
+            if (!this._pipesGroup) {
+                console.error("Grupo de tubulações não encontrado na cena");
+                throw new Error("Grupo de tubulações não encontrado");
+            }
+            // Criar materiais para instâncias
+            this._createInstanceMaterials();
+            // Criar meshes fonte para instancing
+            this._createSourceMeshes();
+        });
+    }
+    /**
+     * Cria materiais para instâncias
+     */
+    _createInstanceMaterials() {
+        const scene = SceneManager.scene;
+        // Criar materiais para cada tipo de tubulação
+        for (const materialType in this._pipeConfig.materials) {
+            const config = this._pipeConfig.materials[materialType];
+            const material = new core_1.PBRMaterial(`${materialType}PipeMat_instance`, scene);
+            material.albedoColor = config.color;
+            material.metallic = config.metallic;
+            material.roughness = config.roughness;
+            this._instanceMaterials[materialType] = material;
+        }
+        // Material para suportes
+        this._instanceMaterials.support = this._createMaterial("supportMat_instance", new core_1.Color3(0.3, 0.3, 0.3));
+    }
+    /**
+     * Cria meshes fonte para instancing
+     */
+    _createSourceMeshes() {
+        const scene = SceneManager.scene;
+        // Criar meshes fonte para cada tamanho de tubulação
+        for (const size in this._pipeConfig.diameters) {
+            const diameter = this._pipeConfig.diameters[size];
+            const tessellation = this._pipeConfig.tessellation[size];
+            // Fonte para segmento de tubo
+            this._sourceMeshes[`pipe_${size}`] = core_1.MeshBuilder.CreateCylinder(`pipe_${size}_source`, {
+                height: 1, // Será escalado
+                diameter: diameter,
+                tessellation: tessellation
+            }, scene);
+            this._sourceMeshes[`pipe_${size}`].setEnabled(false);
+            // Fonte para conexão
+            this._sourceMeshes[`connection_${size}`] = core_1.MeshBuilder.CreateSphere(`connection_${size}_source`, {
+                diameter: diameter * 1.2,
+                segments: tessellation
+            }, scene);
+            this._sourceMeshes[`connection_${size}`].setEnabled(false);
+        }
+        // Fonte para suporte de tubulação
+        this._sourceMeshes.pipeSupport = core_1.MeshBuilder.CreateCylinder("pipeSupport_source", {
+            height: 1, // Será escalado
+            diameter: 0.1,
+            tessellation: 8
+        }, scene);
+        this._sourceMeshes.pipeSupport.material = this._instanceMaterials.support;
+        this._sourceMeshes.pipeSupport.setEnabled(false);
+    }
+    /**
+     * Cria as tubulações na cena buscando dados do InMemoryDatabase.
+     */
+    createPipes() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                yield this.initialize();
+                console.log("PipesManager inicializado. Buscando dados de tubulações...");
+                // Buscar dados das tubulações do banco de dados em memória
+                const pipeDataList = inMemoryDb_1.db.getEquipmentByType("pipe");
+                if (pipeDataList.length === 0) {
+                    console.warn("Nenhum dado de tubulação encontrado no InMemoryDatabase.");
+                    return;
+                }
+                // Criar tubulações a partir dos dados do DB
+                pipeDataList.forEach(pipeData => this.createPipeFromData(pipeData));
+                console.log(`Total de tubulações criadas: ${this._pipeMeshes.size}`);
+            }
+            catch (error) {
+                console.error("Erro ao criar tubulações:", error);
+                throw error;
+            }
+        });
+    }
+    /**
+     * Cria uma tubulação a partir de dados do InMemoryDatabase, com otimizações.
+     * @param pipeData - Dados da tubulação (DbPipeData).
+     */
+    createPipeFromData(pipeData) {
+        // Verificar se temos os pontos necessários
+        if (!pipeData.points || pipeData.points.length < 2) {
+            console.warn(`Tubulação ${pipeData.id} não tem pontos suficientes`);
+            return null;
+        }
+        // Determinar o tamanho da tubulação
+        const size = pipeData.size || "medium";
+        const diameter = this._pipeConfig.diameters[size] || this._pipeConfig.diameters.medium;
+        const tessellation = this._pipeConfig.tessellation[size] || this._pipeConfig.tessellation.medium;
+        // Determinar o tipo de material
+        const materialType = pipeData.materialType || "standard";
+        // Criar o nó principal para esta tubulação
+        const pipeNode = new core_1.TransformNode(pipeData.id, SceneManager.scene);
+        pipeNode.parent = this._pipesGroup;
+        // Converter os pontos para Vector3 se necessário
+        const points = pipeData.points.map(p => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x, p.y, p.z));
+        // Criar segmentos de tubulação entre pontos consecutivos
+        for (let i = 0; i < points.length - 1; i++) {
+            const segmentId = `${pipeData.id}_segment_${i}`;
+            const segment = this._createPipeSegmentOptimized(segmentId, points[i], points[i + 1], size, materialType);
+            segment.parent = pipeNode;
+            // Se não for o último segmento, adicionar uma conexão/curva
+            if (i < points.length - 2) {
+                const connectionId = `${pipeData.id}_connection_${i}`;
+                const connection = this._createPipeConnectionOptimized(connectionId, points[i + 1], points[i], points[i + 2], size, materialType);
+                connection.parent = pipeNode;
+            }
+        }
+        // Configurar metadados para interação
+        pipeNode.metadata = {
+            id: pipeData.id,
+            type: "pipe",
+            size: size,
+            materialType: materialType,
+            data: pipeData // Referência direta aos dados do DB
+        };
+        // Adicionar à lista de malhas de tubulações
+        this._pipeMeshes.set(pipeData.id, pipeNode);
+        // Criar suportes se necessário (exemplo para tubulação elevada)
+        if (pipeData.id === "PIPE-ELEV-01") { // Exemplo específico
+            this._createPipeSupportsOptimized(pipeData, 4);
+        }
+        return pipeNode;
+    }
+    // createDemoPipes removido, pois os dados vêm do DB
+    /**
+     * Cria um segmento de tubulação otimizado entre dois pontos usando instancing e LOD
+     * @param id - Identificador do segmento
+     * @param start - Ponto inicial
+     * @param end - Ponto final
+     * @param size - Tamanho da tubulação
+     * @param materialType - Tipo de material
+     * @returns O mesh do segmento criado
+     */
+    _createPipeSegmentOptimized(id, start, end, size, materialType) {
+        const scene = SceneManager.scene;
+        // Calcular direção e comprimento
+        const direction = end.subtract(start);
+        const distance = direction.length();
+        // Verificar se temos um mesh fonte para este tamanho
+        const sourceMeshKey = `pipe_${size}`;
+        if (this._sourceMeshes[sourceMeshKey]) {
+            // Criar instância do mesh fonte
+            const pipeInstance = this._sourceMeshes[sourceMeshKey].createInstance(id);
+            // Escalar para o comprimento correto
+            pipeInstance.scaling.y = distance;
+            // Posicionar e orientar o tubo
+            this._positionCylinder(pipeInstance, start, end);
+            // Aplicar material
+            if (this._instanceMaterials[materialType]) {
+                pipeInstance.material = this._instanceMaterials[materialType];
+            }
+            // Tornar selecionável
+            pipeInstance.isPickable = true;
+            return pipeInstance;
+        }
+        else {
+            // Fallback para criação direta se não houver mesh fonte
+            console.warn(`Mesh fonte ${sourceMeshKey} não encontrado, criando segmento diretamente.`);
+            const diameter = this._pipeConfig.diameters[size] || this._pipeConfig.diameters.medium;
+            const tessellation = this._pipeConfig.tessellation[size] || this._pipeConfig.tessellation.medium;
+            const lodTessellation = this._pipeConfig.tessellation[`lod${size.charAt(0).toUpperCase() + size.slice(1)}`] || tessellation / 2;
+            // Criar cilindro para representar o segmento
+            const pipe = core_1.MeshBuilder.CreateCylinder(id, {
+                height: distance,
+                diameter: diameter,
+                tessellation: tessellation
+            }, scene);
+            // Posicionar e orientar o tubo
+            this._positionCylinder(pipe, start, end);
+            // Criar LOD
+            const pipeLOD = core_1.MeshBuilder.CreateCylinder(`${id}_lod`, {
+                height: distance,
+                diameter: diameter,
+                tessellation: lodTessellation
+            }, scene);
+            pipeLOD.setEnabled(false);
+            this._positionCylinder(pipeLOD, start, end);
+            pipe.addLODLevel(this._pipeConfig.lodDistance, pipeLOD);
+            // Aplicar material
+            const materialConfig = this._pipeConfig.materials[materialType] || this._pipeConfig.materials.standard;
+            const material = this._createPBRMaterial(`${id}_material`, materialConfig);
+            pipe.material = material;
+            pipeLOD.material = material;
+            // Tornar selecionável
+            pipe.isPickable = true;
+            return pipe;
+        }
+    }
+    /**
+     * Cria uma conexão (curva/esfera) otimizada em um ponto usando instancing
+     * @param id - Identificador da conexão
+     * @param center - Ponto central da conexão
+     * @param prev - Ponto anterior (para orientação, se necessário)
+     * @param next - Próximo ponto (para orientação, se necessário)
+     * @param size - Tamanho da tubulação
+     * @param materialType - Tipo de material
+     * @returns O mesh da conexão criada
+     */
+    _createPipeConnectionOptimized(id, center, prev, next, size, materialType) {
+        const scene = SceneManager.scene;
+        // Verificar se temos um mesh fonte para este tamanho
+        const sourceMeshKey = `connection_${size}`;
+        if (this._sourceMeshes[sourceMeshKey]) {
+            // Criar instância do mesh fonte
+            const connectionInstance = this._sourceMeshes[sourceMeshKey].createInstance(id);
+            connectionInstance.position = center;
+            // Aplicar material
+            if (this._instanceMaterials[materialType]) {
+                connectionInstance.material = this._instanceMaterials[materialType];
+            }
+            // Tornar selecionável
+            connectionInstance.isPickable = true;
+            return connectionInstance;
+        }
+        else {
+            // Fallback para criação direta
+            console.warn(`Mesh fonte ${sourceMeshKey} não encontrado, criando conexão diretamente.`);
+            const diameter = this._pipeConfig.diameters[size] || this._pipeConfig.diameters.medium;
+            const tessellation = this._pipeConfig.tessellation[size] || this._pipeConfig.tessellation.medium;
+            const connection = core_1.MeshBuilder.CreateSphere(id, {
+                diameter: diameter * 1.2, // Um pouco maior que o tubo
+                segments: tessellation
+            }, scene);
+            connection.position = center;
+            // Aplicar material
+            const materialConfig = this._pipeConfig.materials[materialType] || this._pipeConfig.materials.standard;
+            const material = this._createPBRMaterial(`${id}_material`, materialConfig);
+            connection.material = material;
+            // Tornar selecionável
+            connection.isPickable = true;
+            return connection;
+        }
+    }
+    /**
+     * Cria suportes otimizados para uma tubulação usando instancing
+     * @param pipeData - Dados da tubulação
+     * @param spacing - Espaçamento entre suportes
+     */
+    _createPipeSupportsOptimized(pipeData, spacing) {
+        if (!this._sourceMeshes.pipeSupport)
+            return;
+        const points = pipeData.points.map(p => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x, p.y, p.z));
+        let totalLength = 0;
+        for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i];
+            const end = points[i + 1];
+            const segmentLength = core_1.Vector3.Distance(start, end);
+            const direction = end.subtract(start).normalize();
+            // Calcular número de suportes para este segmento
+            const numSupports = Math.floor(segmentLength / spacing);
+            for (let j = 1; j <= numSupports; j++) {
+                const supportPosition = start.add(direction.scale(j * spacing));
+                // Criar instância do suporte
+                const supportInstance = this._sourceMeshes.pipeSupport.createInstance(`${pipeData.id}_support_${totalLength + j}`);
+                supportInstance.parent = this._pipesGroup; // Adicionar ao grupo principal
+                // Posicionar e escalar
+                const supportHeight = supportPosition.y; // Assumindo que o suporte vai do chão (y=0) até a tubulação
+                supportInstance.scaling.y = supportHeight;
+                supportInstance.position = new core_1.Vector3(supportPosition.x, supportHeight / 2, supportPosition.z);
+            }
+            totalLength += numSupports;
+        }
+    }
+    /**
+     * Posiciona e orienta um cilindro entre dois pontos
+     * @param cylinder - O mesh do cilindro
+     * @param start - Ponto inicial
+     * @param end - Ponto final
+     */
+    _positionCylinder(cylinder, start, end) {
+        const direction = end.subtract(start);
+        const distance = direction.length();
+        // Posicionar no ponto médio
+        cylinder.position = start.add(direction.scale(0.5));
+        // Orientar o cilindro
+        const up = new core_1.Vector3(0, 1, 0);
+        const axis = core_1.Vector3.Cross(up, direction).normalize();
+        const angle = Math.acos(core_1.Vector3.Dot(up, direction.normalize()));
+        cylinder.rotationQuaternion = core_1.Quaternion.RotationAxis(axis, angle);
+    }
+    /**
+     * Cria um material PBR
+     */
+    _createPBRMaterial(name, config) {
+        const scene = SceneManager.scene;
+        const material = new core_1.PBRMaterial(name, scene);
+        material.albedoColor = config.color;
+        material.metallic = config.metallic;
+        material.roughness = config.roughness;
+        return material;
+    }
+    /**
+     * Cria um material standard simples
+     */
+    _createMaterial(name, color) {
+        const scene = SceneManager.scene;
+        const material = new core_1.StandardMaterial(name, scene);
+        material.diffuseColor = color;
+        return material;
+    }
+    /**
+     * Obtém todos os nós de tubulações
+     */
+    getPipeNodes() {
+        return Array.from(this._pipeMeshes.values());
+    }
+    /**
+     * Obtém um nó de tubulação específico por ID
+     */
+    getPipeNodeById(id) {
+        return this._pipeMeshes.get(id) || null;
+    }
+    /**
+     * Atualiza o status de uma tubulação (no DB e visualmente se necessário)
+     */
+    updatePipeStatus(id, status) {
+        const pipeNode = this.getPipeNodeById(id);
+        if (!pipeNode)
+            return false;
+        const metadata = pipeNode.metadata;
+        if (!metadata || !metadata.data)
+            return false;
+        // Atualizar no DB
+        const pipeData = metadata.data;
+        pipeData.status = status;
+        inMemoryDb_1.db.upsertEquipment(pipeData); // Atualiza o registro no DB
+        // TODO: Implementar mudança visual baseada no status (ex: cor, transparência)
+        console.log(`Status da tubulação ${id} atualizado para ${status} no DB.`);
+        return true;
+    }
+    /**
+     * Limpa todas as tubulações da cena e meshes fonte
+     */
+    clearPipes() {
+        this._pipeMeshes.forEach(pipe => pipe.dispose(false, true)); // Dispose nós e filhos
+        this._pipeMeshes.clear();
+        // Limpar meshes fonte (opcional)
+        Object.values(this._sourceMeshes).forEach(mesh => mesh.dispose());
+        this._sourceMeshes = {};
+        Object.values(this._instanceMaterials).forEach(mat => mat.dispose());
+        this._instanceMaterials = {};
+        console.log("Tubulações e meshes fonte limpos.");
+    }
+}
+exports.PipesManager = PipesManager;
+// Criar instância global para compatibilidade (se necessário)
+// (window as any).PipesManager = PipesManager.getInstance();
+//# sourceMappingURL=pipes.js.map
