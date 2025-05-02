@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = require("@babylonjs/core");
-const materials_1 = require("@babylonjs/materials");
+import { Vector3, ArcRotateCamera, HemisphericLight, DirectionalLight, MeshBuilder, StandardMaterial, CubeTexture, Texture, Color3, TransformNode, DefaultRenderingPipeline } from "@babylonjs/core";
+import { GridMaterial } from "@babylonjs/materials";
 /**
  * SceneManager - Gerenciamento da cena 3D
  *
@@ -29,7 +27,7 @@ const SceneManager = (function () {
             alpha: -Math.PI / 2, // rotação horizontal
             beta: Math.PI / 3, // rotação vertical
             radius: 50, // distância
-            target: new core_1.Vector3(0, 0, 0)
+            target: new Vector3(0, 0, 0)
         },
         limits: {
             radiusMin: 10,
@@ -67,7 +65,7 @@ const SceneManager = (function () {
         if (!_scene || !_canvas)
             return;
         // Criar câmera Arc Rotate (estilo órbita)
-        _camera = new core_1.ArcRotateCamera("mainCamera", _cameraSettings.default.alpha, _cameraSettings.default.beta, _cameraSettings.default.radius, _cameraSettings.default.target, _scene);
+        _camera = new ArcRotateCamera("mainCamera", _cameraSettings.default.alpha, _cameraSettings.default.beta, _cameraSettings.default.radius, _cameraSettings.default.target, _scene);
         console.log("Câmera configurada: alpha=", _cameraSettings.default.alpha, "beta=", _cameraSettings.default.beta, "radius=", _cameraSettings.default.radius, "target=", _cameraSettings.default.target.toString());
         // Anexar controles ao canvas
         _camera.attachControl(_canvas, true, true);
@@ -92,14 +90,14 @@ const SceneManager = (function () {
         if (!_scene)
             return;
         // Luz ambiente para iluminação base
-        const ambientLight = new core_1.HemisphericLight("ambientLight", new core_1.Vector3(0, 1, 0), _scene);
+        const ambientLight = new HemisphericLight("ambientLight", new Vector3(0, 1, 0), _scene);
         ambientLight.intensity = 0.5;
-        ambientLight.diffuse = new core_1.Color3(0.9, 0.9, 1.0);
-        ambientLight.groundColor = new core_1.Color3(0.5, 0.5, 0.6);
+        ambientLight.diffuse = new Color3(0.9, 0.9, 1.0);
+        ambientLight.groundColor = new Color3(0.5, 0.5, 0.6);
         // Luz direcional principal (simula o sol)
-        _light = new core_1.DirectionalLight("mainLight", new core_1.Vector3(-0.5, -1, -0.5), _scene);
+        _light = new DirectionalLight("mainLight", new Vector3(-0.5, -1, -0.5), _scene);
         _light.intensity = 0.8;
-        _light.diffuse = new core_1.Color3(1, 0.95, 0.85);
+        _light.diffuse = new Color3(1, 0.95, 0.85);
         // Gerar sombras (opcional, desativado no protótipo inicial por desempenho)
         /*
         const shadowGenerator = new ShadowGenerator(1024, _light);
@@ -114,38 +112,38 @@ const SceneManager = (function () {
         if (!_scene)
             return;
         // Skybox para simular o céu
-        _skybox = core_1.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, _scene);
-        const skyboxMaterial = new core_1.StandardMaterial("skyBoxMaterial", _scene);
+        _skybox = MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, _scene);
+        const skyboxMaterial = new StandardMaterial("skyBoxMaterial", _scene);
         skyboxMaterial.backFaceCulling = false;
         // Ensure CubeTexture is imported
-        skyboxMaterial.reflectionTexture = new core_1.CubeTexture("https://assets.babylonjs.com/textures/skybox", _scene);
+        skyboxMaterial.reflectionTexture = new CubeTexture("https://assets.babylonjs.com/textures/skybox", _scene);
         if (skyboxMaterial.reflectionTexture) {
-            skyboxMaterial.reflectionTexture.coordinatesMode = core_1.Texture.SKYBOX_MODE;
+            skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
         }
-        skyboxMaterial.diffuseColor = new core_1.Color3(0, 0, 0);
-        skyboxMaterial.specularColor = new core_1.Color3(0, 0, 0);
+        skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
+        skyboxMaterial.specularColor = new Color3(0, 0, 0);
         _skybox.material = skyboxMaterial;
         _skybox.infiniteDistance = true;
         // Terreno/chão
-        _ground = core_1.MeshBuilder.CreateGround("ground", {
+        _ground = MeshBuilder.CreateGround("ground", {
             width: 100,
             height: 100,
             subdivisions: 4,
             updatable: false
         }, _scene);
-        const groundMaterial = new core_1.StandardMaterial("groundMaterial", _scene);
-        groundMaterial.diffuseColor = new core_1.Color3(0.6, 0.6, 0.6);
-        groundMaterial.specularColor = new core_1.Color3(0.1, 0.1, 0.1);
+        const groundMaterial = new StandardMaterial("groundMaterial", _scene);
+        groundMaterial.diffuseColor = new Color3(0.6, 0.6, 0.6);
+        groundMaterial.specularColor = new Color3(0.1, 0.1, 0.1);
         groundMaterial.wireframe = false;
         // Adicionar grid ao chão para referência visual
         // Ensure GridMaterial is imported from @babylonjs/materials
-        const gridMaterial = new materials_1.GridMaterial("gridMaterial", _scene);
+        const gridMaterial = new GridMaterial("gridMaterial", _scene);
         gridMaterial.majorUnitFrequency = 5;
         gridMaterial.minorUnitVisibility = 0.3;
         gridMaterial.gridRatio = 1;
         gridMaterial.backFaceCulling = false;
-        gridMaterial.mainColor = new core_1.Color3(0.2, 0.2, 0.2);
-        gridMaterial.lineColor = new core_1.Color3(0.2, 0.2, 0.4);
+        gridMaterial.mainColor = new Color3(0.2, 0.2, 0.2);
+        gridMaterial.lineColor = new Color3(0.2, 0.2, 0.4);
         gridMaterial.opacity = 0.8;
         _ground.material = gridMaterial;
         _ground.position.y = -0.01; // Ligeiramente abaixo para evitar z-fighting
@@ -160,7 +158,7 @@ const SceneManager = (function () {
         // Criar grupos para cada tipo de objeto
         Object.keys(_groups).forEach((key) => {
             // Use index signature to access _groups[key]
-            _groups[key] = new core_1.TransformNode(key + "Group", _scene);
+            _groups[key] = new TransformNode(key + "Group", _scene);
             const group = _groups[key];
             if (group) {
                 console.log(`Grupo criado: ${key}Group, Posição:`, group.position);
@@ -214,7 +212,7 @@ const SceneManager = (function () {
             return;
         // Pipeline de pós-processamento
         // Ensure DefaultRenderingPipeline is imported
-        const pipeline = new core_1.DefaultRenderingPipeline("defaultPipeline", true, _scene, [_camera] // Pass camera in an array
+        const pipeline = new DefaultRenderingPipeline("defaultPipeline", true, _scene, [_camera] // Pass camera in an array
         );
         // Configurar efeitos
         pipeline.fxaaEnabled = true;

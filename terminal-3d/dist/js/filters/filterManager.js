@@ -1,16 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.filterManager = exports.FilterManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb");
-const categoryManager_1 = require("./categoryManager");
+import { Vector3 } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb";
+import { categoryManager } from "./categoryManager";
 /**
  * FilterManager - Gerencia filtros para equipamentos.
  *
  * Permite criar, modificar, remover e aplicar filtros para encontrar
  * equipamentos com base em diversos critérios.
  */
-class FilterManager {
+export class FilterManager {
     /**
      * Obtém a instância única do FilterManager (Singleton)
      */
@@ -231,7 +228,7 @@ class FilterManager {
         const activeFilterSet = this.getActiveFilterSet();
         if (!activeFilterSet) {
             // Se não houver filtro ativo, retornar todos os equipamentos
-            return inMemoryDb_1.db.getAllEquipment();
+            return db.getAllEquipment();
         }
         return this.applyFilters(activeFilterSet);
     }
@@ -242,7 +239,7 @@ class FilterManager {
      */
     applyFilters(filterSet) {
         // Obter todos os equipamentos do banco de dados
-        let filteredEquipment = inMemoryDb_1.db.getAllEquipment();
+        let filteredEquipment = db.getAllEquipment();
         // Aplicar filtros personalizados
         if (filterSet.filters && filterSet.filters.length > 0) {
             const activeFilters = filterSet.filters.filter(f => f.isActive);
@@ -255,13 +252,13 @@ class FilterManager {
             const { categoryId, includeSubcategories } = filterSet.categoryFilter;
             if (includeSubcategories) {
                 // Obter todos os equipamentos na categoria e subcategorias
-                const categoryEquipment = categoryManager_1.categoryManager.getEquipmentInSubtree(categoryId);
+                const categoryEquipment = categoryManager.getEquipmentInSubtree(categoryId);
                 const categoryEquipmentIds = new Set(categoryEquipment.map(eq => eq.id));
                 filteredEquipment = filteredEquipment.filter(equipment => categoryEquipmentIds.has(equipment.id));
             }
             else {
                 // Obter apenas equipamentos diretamente na categoria
-                const categoryEquipment = categoryManager_1.categoryManager.getEquipmentInCategory(categoryId);
+                const categoryEquipment = categoryManager.getEquipmentInCategory(categoryId);
                 const categoryEquipmentIds = new Set(categoryEquipment.map(eq => eq.id));
                 filteredEquipment = filteredEquipment.filter(equipment => categoryEquipmentIds.has(equipment.id));
             }
@@ -326,10 +323,10 @@ class FilterManager {
             filteredEquipment = filteredEquipment.filter(equipment => {
                 if (!equipment.position)
                     return false;
-                const position = equipment.position instanceof core_1.Vector3
+                const position = equipment.position instanceof Vector3
                     ? equipment.position
-                    : new core_1.Vector3(equipment.position.x || 0, equipment.position.y || 0, equipment.position.z || 0);
-                const distance = core_1.Vector3.Distance(position, center);
+                    : new Vector3(equipment.position.x || 0, equipment.position.y || 0, equipment.position.z || 0);
+                const distance = Vector3.Distance(position, center);
                 return distance <= radius;
             });
         }
@@ -431,9 +428,8 @@ class FilterManager {
         };
     }
 }
-exports.FilterManager = FilterManager;
 // Exportar instância singleton para fácil acesso
-exports.filterManager = FilterManager.getInstance();
+export const filterManager = FilterManager.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.FilterManager = exports.filterManager;
+window.FilterManager = filterManager;
 //# sourceMappingURL=filterManager.js.map

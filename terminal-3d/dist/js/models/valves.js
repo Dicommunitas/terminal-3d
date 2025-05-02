@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.valvesManager = exports.ValvesManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a interface de dados
+import { Vector3, MeshBuilder, StandardMaterial, Color3, Quaternion } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb"; // Importar o DB e a interface de dados
 /**
  * ValvesManager - Gerenciador de válvulas
  *
@@ -19,7 +16,7 @@ const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a int
  * na cena 3D do terminal, buscando dados do InMemoryDatabase.
  * Com otimizações de performance (LOD, Instancing).
  */
-class ValvesManager {
+export class ValvesManager {
     /**
      * Obtém a instância única do ValvesManager (Singleton)
      */
@@ -44,66 +41,66 @@ class ValvesManager {
                 gate: {
                     name: "Gaveta",
                     size: { width: 0.6, height: 0.6, depth: 0.4 },
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     lodTessellation: 8
                 },
                 ball: {
                     name: "Esfera",
                     size: { width: 0.5, height: 0.5, depth: 0.5 },
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     lodTessellation: 8
                 },
                 check: {
                     name: "Retenção",
                     size: { width: 0.6, height: 0.5, depth: 0.4 },
-                    color: new core_1.Color3(0.7, 0.3, 0.1),
+                    color: new Color3(0.7, 0.3, 0.1),
                     lodTessellation: 8
                 },
                 butterfly: {
                     name: "Borboleta",
                     size: { width: 0.4, height: 0.6, depth: 0.3 },
-                    color: new core_1.Color3(0.1, 0.3, 0.7),
+                    color: new Color3(0.1, 0.3, 0.7),
                     lodTessellation: 8
                 },
                 control: {
                     name: "Controle",
                     size: { width: 0.7, height: 0.7, depth: 0.5 },
-                    color: new core_1.Color3(0.1, 0.7, 0.3),
+                    color: new Color3(0.1, 0.7, 0.3),
                     lodTessellation: 8
                 }
             },
             states: {
                 open: {
                     name: "Aberta",
-                    color: new core_1.Color3(0.1, 0.7, 0.1),
+                    color: new Color3(0.1, 0.7, 0.1),
                     wheelRotation: Math.PI / 2, // Volante/Alavanca
                     diskRotation: Math.PI / 2, // Disco borboleta
                     sphereRotation: Math.PI / 2 // Esfera interna
                 },
                 closed: {
                     name: "Fechada",
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
                 },
                 partial: {
                     name: "Parcial",
-                    color: new core_1.Color3(0.7, 0.7, 0.1),
+                    color: new Color3(0.7, 0.7, 0.1),
                     wheelRotation: Math.PI / 4,
                     diskRotation: Math.PI / 4,
                     sphereRotation: Math.PI / 4
                 },
                 maintenance: {
                     name: "Manutenção",
-                    color: new core_1.Color3(0.3, 0.3, 0.7),
+                    color: new Color3(0.3, 0.3, 0.7),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
                 },
                 fault: {
                     name: "Falha",
-                    color: new core_1.Color3(0.7, 0.3, 0.1),
+                    color: new Color3(0.7, 0.3, 0.1),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
@@ -135,9 +132,9 @@ class ValvesManager {
      * @returns O material criado
      */
     _createMaterial(name, color) {
-        const material = new core_1.StandardMaterial(name, SceneManager.scene);
+        const material = new StandardMaterial(name, SceneManager.scene);
         material.diffuseColor = color;
-        material.specularColor = new core_1.Color3(0.2, 0.2, 0.2);
+        material.specularColor = new Color3(0.2, 0.2, 0.2);
         return material;
     }
     /**
@@ -156,12 +153,12 @@ class ValvesManager {
             this._instanceMaterials[`state_${state}`] = this._createMaterial(`state_${state}_instance`, config.color);
         }
         // Materiais adicionais
-        this._instanceMaterials.wheel = this._createMaterial("wheelMat_instance", new core_1.Color3(0.1, 0.1, 0.1));
-        this._instanceMaterials.actuator = this._createMaterial("actuatorMat_instance", new core_1.Color3(0.2, 0.2, 0.2));
-        this._instanceMaterials.sphereInner = this._createMaterial("sphereInnerMat_instance", new core_1.Color3(0.8, 0.8, 0.8));
-        this._instanceMaterials.disk = this._createMaterial("diskMat_instance", new core_1.Color3(0.7, 0.7, 0.7));
-        this._instanceMaterials.cap = this._createMaterial("capMat_instance", new core_1.Color3(0.6, 0.6, 0.6));
-        this._instanceMaterials.arrow = this._createMaterial("arrowMat_instance", new core_1.Color3(0.1, 0.6, 0.1));
+        this._instanceMaterials.wheel = this._createMaterial("wheelMat_instance", new Color3(0.1, 0.1, 0.1));
+        this._instanceMaterials.actuator = this._createMaterial("actuatorMat_instance", new Color3(0.2, 0.2, 0.2));
+        this._instanceMaterials.sphereInner = this._createMaterial("sphereInnerMat_instance", new Color3(0.8, 0.8, 0.8));
+        this._instanceMaterials.disk = this._createMaterial("diskMat_instance", new Color3(0.7, 0.7, 0.7));
+        this._instanceMaterials.cap = this._createMaterial("capMat_instance", new Color3(0.6, 0.6, 0.6));
+        this._instanceMaterials.arrow = this._createMaterial("arrowMat_instance", new Color3(0.1, 0.6, 0.1));
     }
     /**
      * Cria meshes fonte para instancing
@@ -170,33 +167,33 @@ class ValvesManager {
         const scene = SceneManager.scene;
         const lodDistance = this._valveConfig.lodDistance;
         // --- Corpo das Válvulas --- 
-        this._sourceMeshes.gateValveBody = core_1.MeshBuilder.CreateBox("gateValveBody_source", { width: 1, height: 1, depth: 1 }, scene);
-        this._sourceMeshes.ballValveBody = core_1.MeshBuilder.CreateCylinder("ballValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.butterflyValveBody = core_1.MeshBuilder.CreateCylinder("butterflyValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.checkValveBody = core_1.MeshBuilder.CreateCylinder("checkValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.controlValveBody = core_1.MeshBuilder.CreateCylinder("controlValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.gateValveBody = MeshBuilder.CreateBox("gateValveBody_source", { width: 1, height: 1, depth: 1 }, scene);
+        this._sourceMeshes.ballValveBody = MeshBuilder.CreateCylinder("ballValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.butterflyValveBody = MeshBuilder.CreateCylinder("butterflyValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.checkValveBody = MeshBuilder.CreateCylinder("checkValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.controlValveBody = MeshBuilder.CreateCylinder("controlValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
         // --- Componentes Internos/Externos --- 
-        this._sourceMeshes.ballValveSphere = core_1.MeshBuilder.CreateSphere("ballValveSphere_source", { diameter: 1, segments: 16 }, scene);
-        this._sourceMeshes.butterflyValveDisk = core_1.MeshBuilder.CreateDisc("butterflyValveDisk_source", { radius: 0.5, tessellation: 16 }, scene); // Radius 0.5 to fit diameter 1
-        this._sourceMeshes.checkValveCap = core_1.MeshBuilder.CreateBox("checkValveCap_source", { width: 1, height: 0.2, depth: 1 }, scene); // Adjusted size
-        this._sourceMeshes.checkValveArrow = core_1.MeshBuilder.CreateCylinder("checkValveArrow_source", { diameterTop: 0, diameterBottom: 0.2, height: 0.3, tessellation: 4 }, scene); // Adjusted size
-        this._sourceMeshes.controlValveActuator = core_1.MeshBuilder.CreateBox("controlValveActuator_source", { width: 0.5, height: 0.6, depth: 0.5 }, scene); // Adjusted size
-        this._sourceMeshes.wheel = core_1.MeshBuilder.CreateTorus("wheel_source", { diameter: 0.4, thickness: 0.05, tessellation: 16 }, scene);
-        this._sourceMeshes.lever = core_1.MeshBuilder.CreateBox("lever_source", { width: 0.5, height: 0.05, depth: 0.05 }, scene); // Adjusted size
-        this._sourceMeshes.stateIndicator = core_1.MeshBuilder.CreateSphere("stateIndicator_source", { diameter: 0.15, segments: 12 }, scene); // Adjusted size
+        this._sourceMeshes.ballValveSphere = MeshBuilder.CreateSphere("ballValveSphere_source", { diameter: 1, segments: 16 }, scene);
+        this._sourceMeshes.butterflyValveDisk = MeshBuilder.CreateDisc("butterflyValveDisk_source", { radius: 0.5, tessellation: 16 }, scene); // Radius 0.5 to fit diameter 1
+        this._sourceMeshes.checkValveCap = MeshBuilder.CreateBox("checkValveCap_source", { width: 1, height: 0.2, depth: 1 }, scene); // Adjusted size
+        this._sourceMeshes.checkValveArrow = MeshBuilder.CreateCylinder("checkValveArrow_source", { diameterTop: 0, diameterBottom: 0.2, height: 0.3, tessellation: 4 }, scene); // Adjusted size
+        this._sourceMeshes.controlValveActuator = MeshBuilder.CreateBox("controlValveActuator_source", { width: 0.5, height: 0.6, depth: 0.5 }, scene); // Adjusted size
+        this._sourceMeshes.wheel = MeshBuilder.CreateTorus("wheel_source", { diameter: 0.4, thickness: 0.05, tessellation: 16 }, scene);
+        this._sourceMeshes.lever = MeshBuilder.CreateBox("lever_source", { width: 0.5, height: 0.05, depth: 0.05 }, scene); // Adjusted size
+        this._sourceMeshes.stateIndicator = MeshBuilder.CreateSphere("stateIndicator_source", { diameter: 0.15, segments: 12 }, scene); // Adjusted size
         // --- Meshes LOD --- 
         const ballLodTess = this._valveConfig.types.ball.lodTessellation || 8;
-        this._sourceMeshes.ballValveBodyLOD = core_1.MeshBuilder.CreateCylinder("ballValveBody_lod", { height: 1, diameter: 1, tessellation: ballLodTess }, scene);
-        this._sourceMeshes.ballValveSphereLOD = core_1.MeshBuilder.CreateSphere("ballValveSphere_lod", { diameter: 1, segments: ballLodTess }, scene);
+        this._sourceMeshes.ballValveBodyLOD = MeshBuilder.CreateCylinder("ballValveBody_lod", { height: 1, diameter: 1, tessellation: ballLodTess }, scene);
+        this._sourceMeshes.ballValveSphereLOD = MeshBuilder.CreateSphere("ballValveSphere_lod", { diameter: 1, segments: ballLodTess }, scene);
         const butterflyLodTess = this._valveConfig.types.butterfly.lodTessellation || 8;
-        this._sourceMeshes.butterflyValveBodyLOD = core_1.MeshBuilder.CreateCylinder("butterflyValveBody_lod", { height: 1, diameter: 1, tessellation: butterflyLodTess }, scene);
-        this._sourceMeshes.butterflyValveDiskLOD = core_1.MeshBuilder.CreateDisc("butterflyValveDisk_lod", { radius: 0.5, tessellation: butterflyLodTess }, scene);
+        this._sourceMeshes.butterflyValveBodyLOD = MeshBuilder.CreateCylinder("butterflyValveBody_lod", { height: 1, diameter: 1, tessellation: butterflyLodTess }, scene);
+        this._sourceMeshes.butterflyValveDiskLOD = MeshBuilder.CreateDisc("butterflyValveDisk_lod", { radius: 0.5, tessellation: butterflyLodTess }, scene);
         const checkLodTess = this._valveConfig.types.check.lodTessellation || 8;
-        this._sourceMeshes.checkValveBodyLOD = core_1.MeshBuilder.CreateCylinder("checkValveBody_lod", { height: 1, diameter: 1, tessellation: checkLodTess }, scene);
+        this._sourceMeshes.checkValveBodyLOD = MeshBuilder.CreateCylinder("checkValveBody_lod", { height: 1, diameter: 1, tessellation: checkLodTess }, scene);
         const controlLodTess = this._valveConfig.types.control.lodTessellation || 8;
-        this._sourceMeshes.controlValveBodyLOD = core_1.MeshBuilder.CreateCylinder("controlValveBody_lod", { height: 1, diameter: 1, tessellation: controlLodTess }, scene);
-        this._sourceMeshes.wheelLOD = core_1.MeshBuilder.CreateTorus("wheel_lod", { diameter: 0.4, thickness: 0.05, tessellation: 8 }, scene);
-        this._sourceMeshes.stateIndicatorLOD = core_1.MeshBuilder.CreateSphere("stateIndicator_lod", { diameter: 0.15, segments: 6 }, scene);
+        this._sourceMeshes.controlValveBodyLOD = MeshBuilder.CreateCylinder("controlValveBody_lod", { height: 1, diameter: 1, tessellation: controlLodTess }, scene);
+        this._sourceMeshes.wheelLOD = MeshBuilder.CreateTorus("wheel_lod", { diameter: 0.4, thickness: 0.05, tessellation: 8 }, scene);
+        this._sourceMeshes.stateIndicatorLOD = MeshBuilder.CreateSphere("stateIndicator_lod", { diameter: 0.15, segments: 6 }, scene);
         // --- Configurar Materiais, LODs e Desabilitar --- 
         Object.keys(this._sourceMeshes).forEach(key => {
             const mesh = this._sourceMeshes[key];
@@ -255,7 +252,7 @@ class ValvesManager {
                 yield this.initialize();
                 console.log("ValvesManager inicializado. Buscando dados de válvulas...");
                 // Buscar dados das válvulas do banco de dados em memória
-                const valveDataList = inMemoryDb_1.db.getEquipmentByType("valve");
+                const valveDataList = db.getEquipmentByType("valve");
                 if (valveDataList.length === 0) {
                     console.warn("Nenhum dado de válvula encontrado no InMemoryDatabase.");
                     return;
@@ -393,17 +390,17 @@ class ValvesManager {
         }
         // Configurar posição e rotação
         if (valveData.position) {
-            valveBodyInstance.position = valveData.position instanceof core_1.Vector3 ? valveData.position : new core_1.Vector3(valveData.position.x, valveData.position.y, valveData.position.z);
+            valveBodyInstance.position = valveData.position instanceof Vector3 ? valveData.position : new Vector3(valveData.position.x, valveData.position.y, valveData.position.z);
         }
         else {
-            valveBodyInstance.position = core_1.Vector3.Zero();
+            valveBodyInstance.position = Vector3.Zero();
             console.warn(`Válvula ${valveData.id} sem posição definida.`);
         }
         if (valveData.rotation) {
-            valveBodyInstance.rotationQuaternion = core_1.Quaternion.FromEulerAngles(valveData.rotation.x || 0, valveData.rotation.y || 0, valveData.rotation.z || 0);
+            valveBodyInstance.rotationQuaternion = Quaternion.FromEulerAngles(valveData.rotation.x || 0, valveData.rotation.y || 0, valveData.rotation.z || 0);
         }
         else {
-            valveBodyInstance.rotationQuaternion = core_1.Quaternion.Identity();
+            valveBodyInstance.rotationQuaternion = Quaternion.Identity();
         }
         // Configurar escala do corpo
         valveBodyInstance.scaling.set(typeConfig.size.width, typeConfig.size.height, typeConfig.size.depth);
@@ -414,17 +411,17 @@ class ValvesManager {
         wheelOrLeverInstance.position.y = typeConfig.size.height / 2 + (wheelLeverSourceMeshKey === "lever" ? 0.025 : 0); // Ajuste fino para alavanca
         // Rotação inicial (eixo X para volante, eixo Y para alavanca?)
         if (wheelLeverSourceMeshKey === "wheel") {
-            wheelOrLeverInstance.rotationQuaternion = core_1.Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+            wheelOrLeverInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
         }
         else {
-            wheelOrLeverInstance.rotationQuaternion = core_1.Quaternion.Identity();
+            wheelOrLeverInstance.rotationQuaternion = Quaternion.Identity();
         }
         // Configurar posições de componentes específicos
         if (ballSphereInstance) {
             ballSphereInstance.scaling.set(0.8, 0.8, 0.8); // Esfera um pouco menor que o corpo
         }
         if (butterflyDiskInstance) {
-            butterflyDiskInstance.rotationQuaternion = core_1.Quaternion.FromEulerAngles(Math.PI / 2, 0, 0); // Disco na vertical inicialmente
+            butterflyDiskInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0); // Disco na vertical inicialmente
         }
         if (checkCapInstance) {
             checkCapInstance.position.y = typeConfig.size.height / 2; // Tampa em cima
@@ -433,7 +430,7 @@ class ValvesManager {
         }
         if (checkArrowInstance) {
             checkArrowInstance.position.y = typeConfig.size.height / 2 + 0.15; // Seta em cima da tampa
-            checkArrowInstance.rotationQuaternion = core_1.Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+            checkArrowInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
         }
         if (controlActuatorInstance) {
             controlActuatorInstance.position.y = typeConfig.size.height / 2 + 0.3; // Atuador em cima
@@ -463,24 +460,24 @@ class ValvesManager {
         metadata.data.state = state; // Atualizar dados no DB também?
         // Atualizar rotação do volante/alavanca
         const wheelLever = metadata.components.wheelOrLever;
-        const originalRotation = wheelLever.rotationQuaternion ? wheelLever.rotationQuaternion.toEulerAngles() : core_1.Vector3.Zero();
+        const originalRotation = wheelLever.rotationQuaternion ? wheelLever.rotationQuaternion.toEulerAngles() : Vector3.Zero();
         if (metadata.valveType === "ball" || metadata.valveType === "butterfly") {
             // Rotação da alavanca (eixo Y)
-            wheelLever.rotationQuaternion = core_1.Quaternion.FromEulerAngles(originalRotation.x, stateConfig.wheelRotation, originalRotation.z);
+            wheelLever.rotationQuaternion = Quaternion.FromEulerAngles(originalRotation.x, stateConfig.wheelRotation, originalRotation.z);
         }
         else {
             // Rotação do volante (eixo Z local? ou Y global?)
             // Assumindo rotação em torno do eixo Y global para simplicidade
-            wheelLever.rotationQuaternion = core_1.Quaternion.FromEulerAngles(Math.PI / 2, stateConfig.wheelRotation, 0);
+            wheelLever.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, stateConfig.wheelRotation, 0);
         }
         // Atualizar rotação de componentes internos
         if (metadata.components.ballSphere && stateConfig.sphereRotation !== undefined) {
-            metadata.components.ballSphere.rotationQuaternion = core_1.Quaternion.FromEulerAngles(0, stateConfig.sphereRotation, 0);
+            metadata.components.ballSphere.rotationQuaternion = Quaternion.FromEulerAngles(0, stateConfig.sphereRotation, 0);
         }
         if (metadata.components.butterflyDisk && stateConfig.diskRotation !== undefined) {
             // Rotação do disco em torno do eixo Z local (após rotação inicial)
-            const initialDiskRotation = core_1.Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
-            const stateRotation = core_1.Quaternion.FromEulerAngles(0, 0, stateConfig.diskRotation);
+            const initialDiskRotation = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+            const stateRotation = Quaternion.FromEulerAngles(0, 0, stateConfig.diskRotation);
             metadata.components.butterflyDisk.rotationQuaternion = initialDiskRotation.multiply(stateRotation);
         }
         // Atualizar cor do indicador de estado
@@ -538,9 +535,8 @@ class ValvesManager {
         return ((_a = this._valveInstances.get(valveId)) === null || _a === void 0 ? void 0 : _a.components.body) || null;
     }
 }
-exports.ValvesManager = ValvesManager;
 // Exportar a instância Singleton para fácil acesso
-exports.valvesManager = ValvesManager.getInstance();
+export const valvesManager = ValvesManager.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.ValvesManager = exports.valvesManager;
+window.ValvesManager = valvesManager;
 //# sourceMappingURL=valves.js.map

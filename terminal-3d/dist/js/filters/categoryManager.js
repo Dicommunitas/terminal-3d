@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.categoryManager = exports.CategoryManager = void 0;
-const inMemoryDb_1 = require("../database/inMemoryDb");
+import { db } from "../database/inMemoryDb";
 /**
  * CategoryManager - Gerencia a estrutura hierárquica de categorias para equipamentos.
  *
  * Permite criar, modificar, remover categorias e associar equipamentos a elas.
  * Facilita a navegação e filtragem por categorias.
  */
-class CategoryManager {
+export class CategoryManager {
     /**
      * Obtém a instância única do CategoryManager (Singleton)
      */
@@ -104,10 +101,10 @@ class CategoryManager {
         }
         // Desassociar equipamentos desta categoria
         nodeToRemove.equipmentIds.forEach(eqId => {
-            const equipment = inMemoryDb_1.db.getEquipmentById(eqId);
+            const equipment = db.getEquipmentById(eqId);
             if (equipment) {
                 equipment.categoryId = undefined; // Ou mover para o pai?
-                inMemoryDb_1.db.upsertEquipment(equipment);
+                db.upsertEquipment(equipment);
             }
         });
         // Remover da lista de filhos do pai
@@ -199,7 +196,7 @@ class CategoryManager {
             console.warn(`Categoria com ID ${categoryId} não encontrada.`);
             return false;
         }
-        const equipment = inMemoryDb_1.db.getEquipmentById(equipmentId);
+        const equipment = db.getEquipmentById(equipmentId);
         if (!equipment) {
             console.warn(`Equipamento com ID ${equipmentId} não encontrado no DB.`);
             return false;
@@ -220,7 +217,7 @@ class CategoryManager {
         }
         // Atualizar equipamento no DB
         equipment.categoryId = categoryId;
-        inMemoryDb_1.db.upsertEquipment(equipment);
+        db.upsertEquipment(equipment);
         console.log(`Equipamento ${equipmentId} associado à categoria ${categoryId}.`);
         return true;
     }
@@ -230,7 +227,7 @@ class CategoryManager {
      * @returns true se desassociado com sucesso, false caso contrário.
      */
     unassignEquipmentFromCategory(equipmentId) {
-        const equipment = inMemoryDb_1.db.getEquipmentById(equipmentId);
+        const equipment = db.getEquipmentById(equipmentId);
         if (!equipment || !equipment.categoryId) {
             // Equipamento não encontrado ou já não está associado
             return true;
@@ -244,7 +241,7 @@ class CategoryManager {
         }
         // Remover categoryId do equipamento no DB
         equipment.categoryId = undefined;
-        inMemoryDb_1.db.upsertEquipment(equipment);
+        db.upsertEquipment(equipment);
         console.log(`Equipamento ${equipmentId} desassociado de sua categoria.`);
         return true;
     }
@@ -286,7 +283,7 @@ class CategoryManager {
         if (!categoryNode)
             return [];
         return categoryNode.equipmentIds
-            .map(eqId => inMemoryDb_1.db.getEquipmentById(eqId))
+            .map(eqId => db.getEquipmentById(eqId))
             .filter(Boolean);
     }
     /**
@@ -351,9 +348,8 @@ class CategoryManager {
         return path;
     }
 }
-exports.CategoryManager = CategoryManager;
 // Exportar instância singleton para fácil acesso
-exports.categoryManager = CategoryManager.getInstance();
+export const categoryManager = CategoryManager.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.CategoryManager = exports.categoryManager;
+window.CategoryManager = categoryManager;
 //# sourceMappingURL=categoryManager.js.map

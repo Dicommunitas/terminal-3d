@@ -1,58 +1,55 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ColorMapper = void 0;
-const core_1 = require("@babylonjs/core");
+import { Color3, AbstractMesh, PBRMaterial, StandardMaterial } from "@babylonjs/core";
 /**
  * ColorMapper - Gerencia a aplicação de esquemas de cores aos objetos da cena.
  * Refatorado para usar o padrão Strategy através do ColorContext.
  * Esta classe agora pode ser simplificada ou removida se ColorContext for usado diretamente.
  * Mantendo por enquanto para compatibilidade e possível refatoração futura.
  */
-class ColorMapper {
+export class ColorMapper {
     constructor(scene) {
         this._currentMode = 'default';
         this._colorSchemes = {
             product: {
-                'Diesel S10': new core_1.Color3(0.8, 0.7, 0.1),
-                'Diesel Marítimo': new core_1.Color3(0.7, 0.6, 0.1),
-                'Gasolina': new core_1.Color3(0.8, 0.4, 0.1),
-                'Etanol': new core_1.Color3(0.1, 0.8, 0.3),
-                'Óleo Lubrificante': new core_1.Color3(0.5, 0.3, 0.1),
-                'GLP': new core_1.Color3(0.3, 0.7, 0.7),
-                'Água': new core_1.Color3(0.1, 0.5, 0.8),
-                'Vapor': new core_1.Color3(0.8, 0.8, 0.8),
-                'Querosene': new core_1.Color3(0.7, 0.7, 0.7),
-                'default': new core_1.Color3(0.5, 0.5, 0.5)
+                'Diesel S10': new Color3(0.8, 0.7, 0.1),
+                'Diesel Marítimo': new Color3(0.7, 0.6, 0.1),
+                'Gasolina': new Color3(0.8, 0.4, 0.1),
+                'Etanol': new Color3(0.1, 0.8, 0.3),
+                'Óleo Lubrificante': new Color3(0.5, 0.3, 0.1),
+                'GLP': new Color3(0.3, 0.7, 0.7),
+                'Água': new Color3(0.1, 0.5, 0.8),
+                'Vapor': new Color3(0.8, 0.8, 0.8),
+                'Querosene': new Color3(0.7, 0.7, 0.7),
+                'default': new Color3(0.5, 0.5, 0.5)
             },
             status: {
-                'operational': new core_1.Color3(0.1, 0.7, 0.1),
-                'maintenance': new core_1.Color3(0.7, 0.7, 0.1),
-                'fault': new core_1.Color3(0.7, 0.1, 0.1),
-                'offline': new core_1.Color3(0.5, 0.5, 0.5),
-                'standby': new core_1.Color3(0.1, 0.5, 0.8),
+                'operational': new Color3(0.1, 0.7, 0.1),
+                'maintenance': new Color3(0.7, 0.7, 0.1),
+                'fault': new Color3(0.7, 0.1, 0.1),
+                'offline': new Color3(0.5, 0.5, 0.5),
+                'standby': new Color3(0.1, 0.5, 0.8),
                 // Mapeamento de estados de válvula para status
-                'open': new core_1.Color3(0.1, 0.7, 0.1), // Verde (operacional)
-                'closed': new core_1.Color3(0.7, 0.1, 0.1), // Vermelho (operacional, mas fechado)
-                'partial': new core_1.Color3(0.7, 0.7, 0.1), // Amarelo (operacional, parcial)
-                'default': new core_1.Color3(0.3, 0.3, 0.3)
+                'open': new Color3(0.1, 0.7, 0.1), // Verde (operacional)
+                'closed': new Color3(0.7, 0.1, 0.1), // Vermelho (operacional, mas fechado)
+                'partial': new Color3(0.7, 0.7, 0.1), // Amarelo (operacional, parcial)
+                'default': new Color3(0.3, 0.3, 0.3)
             },
             temperature: {
                 ranges: [
-                    { max: 0, color: new core_1.Color3(0.0, 0.0, 0.8) },
-                    { max: 25, color: new core_1.Color3(0.0, 0.5, 0.8) },
-                    { max: 50, color: new core_1.Color3(0.0, 0.8, 0.0) },
-                    { max: 75, color: new core_1.Color3(0.8, 0.8, 0.0) },
-                    { max: 100, color: new core_1.Color3(0.8, 0.4, 0.0) },
-                    { max: Infinity, color: new core_1.Color3(0.8, 0.0, 0.0) }
+                    { max: 0, color: new Color3(0.0, 0.0, 0.8) },
+                    { max: 25, color: new Color3(0.0, 0.5, 0.8) },
+                    { max: 50, color: new Color3(0.0, 0.8, 0.0) },
+                    { max: 75, color: new Color3(0.8, 0.8, 0.0) },
+                    { max: 100, color: new Color3(0.8, 0.4, 0.0) },
+                    { max: Infinity, color: new Color3(0.8, 0.0, 0.0) }
                 ],
-                default: new core_1.Color3(0.5, 0.5, 0.5)
+                default: new Color3(0.5, 0.5, 0.5)
             },
             default: {
-                'tank': new core_1.Color3(0.0, 0.47, 0.75),
-                'pipe': new core_1.Color3(0.5, 0.5, 0.5),
-                'valve': new core_1.Color3(0.7, 0.1, 0.1),
-                'loadingArea': new core_1.Color3(0.8, 0.5, 0.2),
-                'default': new core_1.Color3(0.3, 0.3, 0.3)
+                'tank': new Color3(0.0, 0.47, 0.75),
+                'pipe': new Color3(0.5, 0.5, 0.5),
+                'valve': new Color3(0.7, 0.1, 0.1),
+                'loadingArea': new Color3(0.8, 0.5, 0.2),
+                'default': new Color3(0.3, 0.3, 0.3)
             }
         };
         // Referência aos objetos gerenciados (deve ser preenchido externamente)
@@ -156,16 +153,16 @@ class ColorMapper {
      * @param color - Cor a aplicar.
      */
     _applyColorToNode(node, color) {
-        const meshesToColor = (node instanceof core_1.AbstractMesh) ? [node] : node.getChildMeshes(false);
+        const meshesToColor = (node instanceof AbstractMesh) ? [node] : node.getChildMeshes(false);
         meshesToColor.forEach(mesh => {
             // Aplicar apenas às malhas principais, evitar indicadores etc.
             if (mesh.name.includes('_body') || mesh.name.includes('_segment_') ||
                 (!mesh.name.includes('_level') && !mesh.name.includes('_indicator') && !mesh.name.includes('_state') && !mesh.name.includes('_wheel') && !mesh.name.includes('_cap') && !mesh.name.includes('_arrow') && !mesh.name.includes('_support') && !mesh.name.includes('_platform') && !mesh.name.includes('_rail') && !mesh.name.includes('_step') && !mesh.name.includes('_conn') && !mesh.name.includes('_valve'))) {
                 if (mesh.material) {
-                    if (mesh.material instanceof core_1.PBRMaterial) {
+                    if (mesh.material instanceof PBRMaterial) {
                         mesh.material.albedoColor = color;
                     }
-                    else if (mesh.material instanceof core_1.StandardMaterial) {
+                    else if (mesh.material instanceof StandardMaterial) {
                         mesh.material.diffuseColor = color;
                     }
                     // Adicionar lógica para MultiMaterial se necessário
@@ -268,5 +265,4 @@ class ColorMapper {
         console.log("ColorMapper descartado.");
     }
 }
-exports.ColorMapper = ColorMapper;
 //# sourceMappingURL=colorMapping.js.map

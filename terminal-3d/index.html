@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal 3D - Protótipo</title>
+    <title>Terminal Viewer</title> <!-- Updated Title -->
     <link rel="stylesheet" href="css/styles.css">
     <!-- Babylon.js CDN -->
     <script src="https://cdn.babylonjs.com/babylon.js"></script>
@@ -47,13 +47,13 @@
                 Áreas de Carregamento
             </label>
         </div>
-<div class="layer-item">
-   <label>
-      <input type="checkbox" id="layerGround" checked>
-      <span class="color-indicator" style="background-color: #666666;"></span>
-      Terreno
-   </label>
-</div>
+        <div class="layer-item">
+           <label>
+              <input type="checkbox" id="layerGround" checked>
+              <span class="color-indicator" style="background-color: #666666;"></span>
+              Terreno
+           </label>
+        </div>
 
         <hr>
         <div class="layer-item">
@@ -97,29 +97,14 @@
     <div id="loadingScreen">
         <div class="loading-content">
             <div class="spinner"></div>
-            <div class="loading-text">Carregando Terminal 3D...</div>
+            <div class="loading-text">Carregando Terminal Viewer...</div> <!-- Updated Text -->
         </div>
     </div>
 
-    <!-- Carregamento de scripts -->
-    <script src="data/equipment.js"></script>
-    
-    <!-- Utilitários -->
-    <script src="js/utils/picker.js"></script>
-    <script src="js/utils/colorMapping.js"></script>
-    
-    <!-- Módulos de interface -->
-    <script src="js/ui/layerPanel.js"></script>
-    <script src="js/ui/infoPanel.js"></script>
-    
-    <!-- Módulos de modelos -->
-    <script src="js/models/tanks.js"></script>
-    <script src="js/models/pipes.js"></script>
-    <script src="js/models/valves.js"></script>
-    <script src="js/models/loadingAreas.js"></script>
-    
-    <!-- Módulo de cena e aplicação -->
-    <script src="js/scene.js"></script>
-    <script src="js/app.js"></script>
+    <!-- Carregamento do script principal como módulo ES -->
+    <!-- Os outros scripts serão importados pelo app.js -->
+    <script type="module" src="dist/app.js"></script> 
+
 </body>
 </html>
+

@@ -1,21 +1,18 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ObjectPicker = void 0;
-const core_1 = require("@babylonjs/core"); // Added Mesh, Node
+import { AbstractMesh, PointerEventTypes, HighlightLayer, Color3, Sound, TransformNode, Mesh } from "@babylonjs/core"; // Added Mesh, Node
 /**
  * ObjectPicker - Utilitário para seleção de objetos na cena 3D
  *
  * Responsável por gerenciar a interação do usuário com objetos na cena,
  * incluindo seleção, destaque visual e rastreamento do objeto selecionado.
  */
-class ObjectPicker {
+export class ObjectPicker {
     constructor(scene, canvas) {
         this._selectedObject = null;
         this._pointerDownObserver = null;
         this._pointerMoveObserver = null;
         this._enabled = true;
         this._config = {
-            highlightColor: new core_1.Color3(1, 0.8, 0.2), // Amarelo
+            highlightColor: new Color3(1, 0.8, 0.2), // Amarelo
             highlightIntensity: 0.5, // Intensidade não é diretamente usada por HighlightLayer da mesma forma
             outlineWidth: 0.02,
             tooltipDelay: 1000, // Milissegundos para mostrar tooltip
@@ -55,7 +52,7 @@ class ObjectPicker {
         this._scene = scene;
         this._canvas = canvas;
         // Criar camada de destaque
-        this._highlightLayer = new core_1.HighlightLayer("selectionHighlight", this._scene);
+        this._highlightLayer = new HighlightLayer("selectionHighlight", this._scene);
         this._highlightLayer.innerGlow = false;
         this._highlightLayer.outerGlow = true;
         // Configurar observadores de eventos
@@ -81,7 +78,7 @@ class ObjectPicker {
         this._pointerDownObserver = this._scene.onPointerObservable.add((pointerInfo) => {
             if (!this._enabled)
                 return;
-            if (pointerInfo.type === core_1.PointerEventTypes.POINTERDOWN) {
+            if (pointerInfo.type === PointerEventTypes.POINTERDOWN) {
                 this._handlePointerDown(pointerInfo);
             }
         });
@@ -89,7 +86,7 @@ class ObjectPicker {
         this._pointerMoveObserver = this._scene.onPointerObservable.add((pointerInfo) => {
             if (!this._enabled)
                 return;
-            if (pointerInfo.type === core_1.PointerEventTypes.POINTERMOVE) {
+            if (pointerInfo.type === PointerEventTypes.POINTERMOVE) {
                 this._handlePointerMove(pointerInfo);
             }
         });
@@ -194,7 +191,7 @@ class ObjectPicker {
             detail: {
                 object: targetObject,
                 // Pass the original mesh if the targetObject is just a TransformNode wrapper
-                mesh: targetObject instanceof core_1.AbstractMesh ? targetObject : null
+                mesh: targetObject instanceof AbstractMesh ? targetObject : null
                 // Consider finding the primary mesh if targetObject is a TransformNode
             }
         });
@@ -317,7 +314,7 @@ class ObjectPicker {
      * @param soundUrl - URL do arquivo de som
      */
     _loadSoundEffect(soundUrl) {
-        this._clickSound = new core_1.Sound("clickSound", soundUrl, this._scene, null, {
+        this._clickSound = new Sound("clickSound", soundUrl, this._scene, null, {
             volume: 0.5,
             autoplay: false,
             loop: false
@@ -355,7 +352,7 @@ class ObjectPicker {
         // Consider a more robust search if IDs are only on top-level nodes.
         const nodeById = this._scene.getNodeById(objectId); // Try getNodeById first
         let targetNode = null;
-        if (nodeById && (nodeById instanceof core_1.AbstractMesh || nodeById instanceof core_1.TransformNode)) {
+        if (nodeById && (nodeById instanceof AbstractMesh || nodeById instanceof TransformNode)) {
             targetNode = nodeById;
         }
         else {
@@ -367,7 +364,7 @@ class ObjectPicker {
             const objectToSelect = this._findObjectWithMetadata(targetNode);
             if (objectToSelect) { // Check if null
                 // Check if it's pickable (if it's a mesh) or has metadata
-                const isPickable = objectToSelect instanceof core_1.AbstractMesh ? objectToSelect.isPickable : true; // Assume TransformNode is "pickable" conceptually
+                const isPickable = objectToSelect instanceof AbstractMesh ? objectToSelect.isPickable : true; // Assume TransformNode is "pickable" conceptually
                 if (isPickable || objectToSelect.metadata) {
                     this._processSelection(objectToSelect);
                     // Optional: Focus camera
@@ -408,7 +405,7 @@ class ObjectPicker {
             // Check if the current node has metadata
             if ((_a = current.metadata) === null || _a === void 0 ? void 0 : _a.id) {
                 // Found metadata, check if it's the correct type
-                if (current instanceof core_1.AbstractMesh || current instanceof core_1.TransformNode) {
+                if (current instanceof AbstractMesh || current instanceof TransformNode) {
                     return current; // Return the node with metadata
                 }
                 else {
@@ -436,16 +433,16 @@ class ObjectPicker {
      */
     _addHighlight(targetObject) {
         try {
-            if (targetObject instanceof core_1.Mesh) {
+            if (targetObject instanceof Mesh) {
                 // Check if already highlighted to avoid duplicates
                 if (!this._highlightLayer.hasMesh(targetObject)) {
                     this._highlightLayer.addMesh(targetObject, this._config.highlightColor);
                 }
             }
-            else if (targetObject instanceof core_1.TransformNode) {
+            else if (targetObject instanceof TransformNode) {
                 // If it's a TransformNode, highlight its descendant meshes
                 targetObject.getChildMeshes(false).forEach(mesh => {
-                    if (mesh instanceof core_1.Mesh) { // Ensure it's a Mesh
+                    if (mesh instanceof Mesh) { // Ensure it's a Mesh
                         // Check if already highlighted
                         if (!this._highlightLayer.hasMesh(mesh)) {
                             this._highlightLayer.addMesh(mesh, this._config.highlightColor);
@@ -466,12 +463,12 @@ class ObjectPicker {
      */
     _removeHighlight(targetObject) {
         try {
-            if (targetObject instanceof core_1.Mesh) {
+            if (targetObject instanceof Mesh) {
                 this._highlightLayer.removeMesh(targetObject);
             }
-            else if (targetObject instanceof core_1.TransformNode) {
+            else if (targetObject instanceof TransformNode) {
                 targetObject.getChildMeshes(false).forEach(mesh => {
-                    if (mesh instanceof core_1.Mesh) { // Ensure it's a Mesh
+                    if (mesh instanceof Mesh) { // Ensure it's a Mesh
                         this._highlightLayer.removeMesh(mesh);
                     }
                 });
@@ -534,7 +531,6 @@ class ObjectPicker {
         console.log("ObjectPicker disposed.");
     }
 }
-exports.ObjectPicker = ObjectPicker;
 // Disponibilizar no escopo global para compatibilidade (opcional)
 // (window as any).ObjectPicker = ObjectPicker; // Exposing class might be better than instance
 //# sourceMappingURL=picker.js.map

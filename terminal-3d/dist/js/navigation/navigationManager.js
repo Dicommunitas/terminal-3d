@@ -1,15 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.navigationManager = exports.NavigationManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb");
+import { Vector3, ArcRotateCamera, TargetCamera, FreeCamera, Observable } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb";
 /**
  * NavigationManager - Gerencia a navegação contextual e pontos de interesse.
  *
  * Permite salvar, carregar e navegar entre pontos de vista predefinidos,
  * além de criar sequências de navegação guiada.
  */
-class NavigationManager {
+export class NavigationManager {
     /**
      * Obtém a instância única do NavigationManager (Singleton)
      */
@@ -31,9 +28,9 @@ class NavigationManager {
         this._currentStepIndex = -1;
         this._sequenceTimer = null;
         // Observáveis para notificar sobre eventos de navegação
-        this.onViewPointChangedObservable = new core_1.Observable();
-        this.onSequenceStepChangedObservable = new core_1.Observable();
-        this.onSequenceCompletedObservable = new core_1.Observable();
+        this.onViewPointChangedObservable = new Observable();
+        this.onSequenceStepChangedObservable = new Observable();
+        this.onSequenceCompletedObservable = new Observable();
     }
     /**
      * Inicializa o gerenciador com a cena e câmera.
@@ -51,13 +48,13 @@ class NavigationManager {
      */
     _initializeDefaultViewPoints() {
         // Exemplo: Criar um ponto de vista para a visão geral do terminal
-        if (this._camera && this._camera instanceof core_1.ArcRotateCamera) {
+        if (this._camera && this._camera instanceof ArcRotateCamera) {
             const overviewPoint = {
                 id: "overview",
                 name: "Visão Geral",
                 description: "Visão panorâmica do terminal",
-                targetPosition: new core_1.Vector3(0, 0, 0),
-                cameraPosition: new core_1.Vector3(0, 50, -100),
+                targetPosition: new Vector3(0, 0, 0),
+                cameraPosition: new Vector3(0, 50, -100),
                 cameraRotation: {
                     alpha: this._camera.alpha,
                     beta: this._camera.beta,
@@ -86,7 +83,7 @@ class NavigationManager {
         }
         let viewPoint;
         const id = `vp_${Date.now()}`;
-        if (this._camera instanceof core_1.ArcRotateCamera) {
+        if (this._camera instanceof ArcRotateCamera) {
             viewPoint = {
                 id,
                 name,
@@ -104,12 +101,12 @@ class NavigationManager {
                 dateCreated: new Date()
             };
         }
-        else if (this._camera instanceof core_1.FreeCamera) {
+        else if (this._camera instanceof FreeCamera) {
             viewPoint = {
                 id,
                 name,
                 description,
-                targetPosition: new core_1.Vector3(0, 0, 0), // Não há target explícito
+                targetPosition: new Vector3(0, 0, 0), // Não há target explícito
                 cameraPosition: this._camera.position.clone(),
                 cameraType: "free",
                 tags,
@@ -117,7 +114,7 @@ class NavigationManager {
                 dateCreated: new Date()
             };
         }
-        else if (this._camera instanceof core_1.TargetCamera) {
+        else if (this._camera instanceof TargetCamera) {
             viewPoint = {
                 id,
                 name,
@@ -153,7 +150,7 @@ class NavigationManager {
         }
         if (animate) {
             // Animação depende do tipo de câmera
-            if (this._camera instanceof core_1.ArcRotateCamera && viewPoint.cameraRotation) {
+            if (this._camera instanceof ArcRotateCamera && viewPoint.cameraRotation) {
                 // Animar ArcRotateCamera
                 this._scene.beginAnimation(this._camera, 0, 60 * duration, false, 1.0, () => {
                     this.onViewPointChangedObservable.notifyObservers(viewPoint);
@@ -168,7 +165,7 @@ class NavigationManager {
             else {
                 // Animar outros tipos de câmera (mais simples)
                 this._camera.position = viewPoint.cameraPosition;
-                if (this._camera instanceof core_1.TargetCamera) {
+                if (this._camera instanceof TargetCamera) {
                     this._camera.setTarget(viewPoint.targetPosition);
                 }
                 this.onViewPointChangedObservable.notifyObservers(viewPoint);
@@ -177,13 +174,13 @@ class NavigationManager {
         else {
             // Sem animação, apenas definir posição e alvo
             this._camera.position = viewPoint.cameraPosition;
-            if (this._camera instanceof core_1.ArcRotateCamera && viewPoint.cameraRotation) {
+            if (this._camera instanceof ArcRotateCamera && viewPoint.cameraRotation) {
                 this._camera.setTarget(viewPoint.targetPosition);
                 this._camera.alpha = viewPoint.cameraRotation.alpha;
                 this._camera.beta = viewPoint.cameraRotation.beta;
                 this._camera.radius = viewPoint.cameraRotation.radius;
             }
-            else if (this._camera instanceof core_1.TargetCamera) {
+            else if (this._camera instanceof TargetCamera) {
                 this._camera.setTarget(viewPoint.targetPosition);
             }
             this.onViewPointChangedObservable.notifyObservers(viewPoint);
@@ -457,21 +454,21 @@ class NavigationManager {
             console.error("Camera ou Scene não inicializados.");
             return null;
         }
-        const equipment = inMemoryDb_1.db.getEquipmentById(equipmentId);
+        const equipment = db.getEquipmentById(equipmentId);
         if (!equipment || !equipment.position) {
             console.warn(`Equipamento com ID ${equipmentId} não encontrado ou sem posição definida.`);
             return null;
         }
         // Converter posição para Vector3 se necessário
-        const position = equipment.position instanceof core_1.Vector3
+        const position = equipment.position instanceof Vector3
             ? equipment.position
-            : new core_1.Vector3(equipment.position.x || 0, equipment.position.y || 0, equipment.position.z || 0);
+            : new Vector3(equipment.position.x || 0, equipment.position.y || 0, equipment.position.z || 0);
         // Criar um ponto de vista olhando para o equipamento
         const id = `vp_eq_${equipmentId}_${Date.now()}`;
         // Calcular uma posição para a câmera (exemplo simples)
-        const cameraPosition = position.add(new core_1.Vector3(distance, distance / 2, distance));
+        const cameraPosition = position.add(new Vector3(distance, distance / 2, distance));
         let viewPoint;
-        if (this._camera instanceof core_1.ArcRotateCamera) {
+        if (this._camera instanceof ArcRotateCamera) {
             // Para ArcRotateCamera, definir target e calcular alpha/beta/radius
             const direction = cameraPosition.subtract(position);
             const radius = direction.length();
@@ -502,7 +499,7 @@ class NavigationManager {
                 description,
                 targetPosition: position.clone(),
                 cameraPosition: cameraPosition,
-                cameraType: this._camera instanceof core_1.FreeCamera ? "free" : "target",
+                cameraType: this._camera instanceof FreeCamera ? "free" : "target",
                 tags: ["equipment", equipment.type],
                 equipmentFocus: equipmentId,
                 dateCreated: new Date()
@@ -513,9 +510,8 @@ class NavigationManager {
         return viewPoint;
     }
 }
-exports.NavigationManager = NavigationManager;
 // Exportar instância singleton para fácil acesso
-exports.navigationManager = NavigationManager.getInstance();
+export const navigationManager = NavigationManager.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.NavigationManager = exports.navigationManager;
+window.NavigationManager = navigationManager;
 //# sourceMappingURL=navigationManager.js.map

@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.EquipmentData = void 0;
-exports.EquipmentData = {
+export const EquipmentData = {
     /**
      * Dados dos tanques
      */

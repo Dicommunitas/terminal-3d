@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.db = exports.InMemoryDatabase = void 0;
-const core_1 = require("@babylonjs/core"); // Import Nullable
+import { Vector3 } from "@babylonjs/core"; // Import Nullable
 /**
  * InMemoryDatabase - Gerencia os dados do terminal em memória.
  *
@@ -9,7 +6,7 @@ const core_1 = require("@babylonjs/core"); // Import Nullable
  * e coleções NoSQL (Map) para dados como anotações.
  * Implementa o padrão Singleton.
  */
-class InMemoryDatabase {
+export class InMemoryDatabase {
     /**
      * Construtor privado (Singleton)
      */
@@ -241,14 +238,14 @@ class InMemoryDatabase {
                         }
                     }
                     // Converte posições e pontos para Vector3 se necessário
-                    if (item.position && !(item.position instanceof core_1.Vector3)) {
-                        item.position = new core_1.Vector3(item.position.x || 0, item.position.y || 0, item.position.z || 0);
+                    if (item.position && !(item.position instanceof Vector3)) {
+                        item.position = new Vector3(item.position.x || 0, item.position.y || 0, item.position.z || 0);
                     }
-                    if (item.targetPosition && !(item.targetPosition instanceof core_1.Vector3)) { // Converter targetPosition também
-                        item.targetPosition = new core_1.Vector3(item.targetPosition.x || 0, item.targetPosition.y || 0, item.targetPosition.z || 0);
+                    if (item.targetPosition && !(item.targetPosition instanceof Vector3)) { // Converter targetPosition também
+                        item.targetPosition = new Vector3(item.targetPosition.x || 0, item.targetPosition.y || 0, item.targetPosition.z || 0);
                     }
                     if (item.points && Array.isArray(item.points)) {
-                        item.points = item.points.map((p) => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x || 0, p.y || 0, p.z || 0));
+                        item.points = item.points.map((p) => p instanceof Vector3 ? p : new Vector3(p.x || 0, p.y || 0, p.z || 0));
                     }
                     // Garantir que ID existe
                     if (!item.id) {
@@ -273,9 +270,8 @@ class InMemoryDatabase {
         console.log(`${count} itens carregados no banco de dados em memória.`);
     }
 }
-exports.InMemoryDatabase = InMemoryDatabase;
 // Exportar a instância Singleton para fácil acesso
-exports.db = InMemoryDatabase.getInstance();
+export const db = InMemoryDatabase.getInstance();
 // Exemplo de como carregar dados (será feito em outro lugar, como app.ts)
 /*
 import { EquipmentData } from '../data/equipment'; // Supondo que equipment.js seja convertido para TS
@@ -286,5 +282,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 */
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.InMemoryDb = exports.db;
+window.InMemoryDb = db;
 //# sourceMappingURL=inMemoryDb.js.map

@@ -1,16 +1,13 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.operationSimulator = exports.OperationSimulator = void 0;
-const inMemoryDb_1 = require("../../database/inMemoryDb");
-const dataSimulator_1 = require("../dataSimulator");
-const core_1 = require("@babylonjs/core");
+import { db } from "../../database/inMemoryDb";
+import { dataSimulator } from "../dataSimulator";
+import { Observable } from "@babylonjs/core";
 /**
  * OperationSimulator - Simula operações discretas no terminal.
  *
  * Permite iniciar, monitorar e cancelar operações como transferências,
  * mudanças de estado, etc., interagindo com o DataSimulator e o DB.
  */
-class OperationSimulator {
+export class OperationSimulator {
     /**
      * Obtém a instância única do OperationSimulator (Singleton)
      */
@@ -27,7 +24,7 @@ class OperationSimulator {
         this._activeOperations = new Map();
         this._operationTimers = new Map(); // Para operações baseadas em tempo
         // Observável para notificar sobre mudanças no status das operações
-        this.onOperationStatusChangeObservable = new core_1.Observable();
+        this.onOperationStatusChangeObservable = new Observable();
     }
     /**
      * Inicia uma operação de mudança de estado de válvula.
@@ -35,7 +32,7 @@ class OperationSimulator {
      * @returns O ID da operação iniciada ou null em caso de erro.
      */
     startSetValveState(params) {
-        const valve = inMemoryDb_1.db.getEquipmentById(params.valveId);
+        const valve = db.getEquipmentById(params.valveId);
         if (!valve || valve.type !== "valve") {
             console.error(`Válvula com ID ${params.valveId} não encontrada.`);
             return null;
@@ -58,12 +55,12 @@ class OperationSimulator {
         // Simular um pequeno atraso para a operação
         const delay = 500 + Math.random() * 1000; // 0.5 a 1.5 segundos
         this._operationTimers.set(operationId, setTimeout(() => {
-            const currentValve = inMemoryDb_1.db.getEquipmentById(params.valveId);
+            const currentValve = db.getEquipmentById(params.valveId);
             if (currentValve) {
                 currentValve.state = params.newState;
-                inMemoryDb_1.db.upsertEquipment(currentValve);
+                db.upsertEquipment(currentValve);
                 // Notificar via DataSimulator também
-                dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({
+                dataSimulator.onDataUpdateObservable.notifyObservers({
                     equipmentId: params.valveId,
                     property: "state",
                     newValue: params.newState,
@@ -94,9 +91,9 @@ class OperationSimulator {
      * @returns O ID da operação iniciada ou null em caso de erro.
      */
     startTransferProduct(params) {
-        const sourceTank = inMemoryDb_1.db.getEquipmentById(params.sourceTankId);
-        const destTank = inMemoryDb_1.db.getEquipmentById(params.destinationTankId);
-        const pipe = inMemoryDb_1.db.getEquipmentById(params.pipeId);
+        const sourceTank = db.getEquipmentById(params.sourceTankId);
+        const destTank = db.getEquipmentById(params.destinationTankId);
+        const pipe = db.getEquipmentById(params.pipeId);
         if (!sourceTank || sourceTank.type !== "tank")
             return this._logOperationError(params, `Tanque de origem ${params.sourceTankId} não encontrado.`);
         if (!destTank || destTank.type !== "tank")
@@ -109,7 +106,7 @@ class OperationSimulator {
             return this._logOperationError(params, `Duração ou volume alvo deve ser especificado.`);
         // Verificar se as válvulas no caminho estão abertas
         for (const valveId of params.valveIds) {
-            const valve = inMemoryDb_1.db.getEquipmentById(valveId);
+            const valve = db.getEquipmentById(valveId);
             if (!valve || valve.type !== "valve")
                 return this._logOperationError(params, `Válvula ${valveId} não encontrada.`);
             if (valve.state !== "open")
@@ -136,9 +133,9 @@ class OperationSimulator {
                 this._operationTimers.delete(operationId);
                 return;
             }
-            const currentSourceTank = inMemoryDb_1.db.getEquipmentById(params.sourceTankId);
-            const currentDestTank = inMemoryDb_1.db.getEquipmentById(params.destinationTankId);
-            const currentPipe = inMemoryDb_1.db.getEquipmentById(params.pipeId);
+            const currentSourceTank = db.getEquipmentById(params.sourceTankId);
+            const currentDestTank = db.getEquipmentById(params.destinationTankId);
+            const currentPipe = db.getEquipmentById(params.pipeId);
             if (!currentSourceTank || !currentDestTank || !currentPipe) {
                 this._updateOperationStatus(operationId, "failed", "Equipamento não encontrado durante a transferência.");
                 clearInterval(intervalId);
@@ -147,7 +144,7 @@ class OperationSimulator {
             }
             // Verificar válvulas novamente (poderiam ter sido fechadas)
             for (const valveId of params.valveIds) {
-                const valve = inMemoryDb_1.db.getEquipmentById(valveId);
+                const valve = db.getEquipmentById(valveId);
                 if (!valve || valve.state !== "open") {
                     this._updateOperationStatus(operationId, "failed", `Válvula ${valveId} foi fechada durante a transferência.`);
                     clearInterval(intervalId);
@@ -155,8 +152,8 @@ class OperationSimulator {
                     // Zerar fluxo na tubulação
                     if (currentPipe.flowRate !== 0) {
                         currentPipe.flowRate = 0;
-                        inMemoryDb_1.db.upsertEquipment(currentPipe);
-                        dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
+                        db.upsertEquipment(currentPipe);
+                        dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
                     }
                     return;
                 }
@@ -184,8 +181,8 @@ class OperationSimulator {
                 // Zerar fluxo na tubulação
                 if (currentPipe.flowRate !== 0) {
                     currentPipe.flowRate = 0;
-                    inMemoryDb_1.db.upsertEquipment(currentPipe);
-                    dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
+                    db.upsertEquipment(currentPipe);
+                    dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
                 }
                 return;
             }
@@ -194,15 +191,15 @@ class OperationSimulator {
             const newDestLevel = Math.min(1, destLevel + (canTransfer / destCapacity));
             currentSourceTank.level = parseFloat(newSourceLevel.toFixed(4));
             currentDestTank.level = parseFloat(newDestLevel.toFixed(4));
-            inMemoryDb_1.db.upsertEquipment(currentSourceTank);
-            inMemoryDb_1.db.upsertEquipment(currentDestTank);
-            dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.sourceTankId, property: "level", newValue: currentSourceTank.level, timestamp: new Date() });
-            dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.destinationTankId, property: "level", newValue: currentDestTank.level, timestamp: new Date() });
+            db.upsertEquipment(currentSourceTank);
+            db.upsertEquipment(currentDestTank);
+            dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.sourceTankId, property: "level", newValue: currentSourceTank.level, timestamp: new Date() });
+            dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.destinationTankId, property: "level", newValue: currentDestTank.level, timestamp: new Date() });
             // Atualizar fluxo na tubulação
             if (currentPipe.flowRate !== params.transferRate) {
                 currentPipe.flowRate = params.transferRate;
-                inMemoryDb_1.db.upsertEquipment(currentPipe);
-                dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: params.transferRate, timestamp: new Date() });
+                db.upsertEquipment(currentPipe);
+                dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: params.transferRate, timestamp: new Date() });
             }
             transferredVolume += canTransfer;
             // Atualizar progresso
@@ -233,8 +230,8 @@ class OperationSimulator {
                 // Zerar fluxo na tubulação
                 if (currentPipe.flowRate !== 0) {
                     currentPipe.flowRate = 0;
-                    inMemoryDb_1.db.upsertEquipment(currentPipe);
-                    dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
+                    db.upsertEquipment(currentPipe);
+                    dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: params.pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
                 }
             }
         }, updateInterval);
@@ -269,11 +266,11 @@ class OperationSimulator {
         if (status.type === "transferProduct") {
             const pipeId = status.relatedEquipment.find(id => id.startsWith("PIPE"));
             if (pipeId) {
-                const pipe = inMemoryDb_1.db.getEquipmentById(pipeId);
+                const pipe = db.getEquipmentById(pipeId);
                 if (pipe && pipe.flowRate !== 0) {
                     pipe.flowRate = 0;
-                    inMemoryDb_1.db.upsertEquipment(pipe);
-                    dataSimulator_1.dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
+                    db.upsertEquipment(pipe);
+                    dataSimulator.onDataUpdateObservable.notifyObservers({ equipmentId: pipeId, property: "flowRate", newValue: 0, timestamp: new Date() });
                 }
             }
         }
@@ -335,9 +332,8 @@ class OperationSimulator {
         return null;
     }
 }
-exports.OperationSimulator = OperationSimulator;
 // Exportar instância singleton para fácil acesso
-exports.operationSimulator = OperationSimulator.getInstance();
+export const operationSimulator = OperationSimulator.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.OperationSimulator = exports.operationSimulator;
+window.OperationSimulator = operationSimulator;
 //# sourceMappingURL=operationSimulator.js.map
