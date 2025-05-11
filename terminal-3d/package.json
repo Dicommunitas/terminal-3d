@@ -1,21 +1,24 @@
 {
-  "name": "terminal-3d-prototipo",
+  "name": "terminal-3d",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "webpack serve --open",
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "serve": "python -m http.server 8000"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "dependencies": {
+    "@babylonjs/core": "^5.0.0",
+    "@babylonjs/gui": "^5.0.0",
+    "@babylonjs/inspector": "^5.0.0",
+    "@babylonjs/loaders": "^5.0.0",
+    "@babylonjs/materials": "^5.0.0"
+  },
   "devDependencies": {
-    "@babylonjs/core": "^8.5.0",
-    "@babylonjs/gui": "^8.5.0",
-    "@babylonjs/inspector": "^8.5.0",
-    "@babylonjs/loaders": "^8.5.0",
-    "@babylonjs/materials": "^8.5.0",
-    "@types/node": "^22.15.3",
-    "typescript": "^5.8.3"
+    "ts-loader": "^9.4.2",
+    "typescript": "^5.0.0",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^5.2.1"
   }
 }

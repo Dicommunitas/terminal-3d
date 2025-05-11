@@ -255,4 +255,5 @@ const SceneManager = (function () {
 })();
 // Export SceneManager if needed elsewhere, otherwise it's self-contained
 // export default SceneManager; 
+export { SceneManager };
 //# sourceMappingURL=scene.js.map

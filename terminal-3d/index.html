@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Viewer</title> <!-- Updated Title -->
-    <link rel="stylesheet" href="css/styles.css">
-    <!-- Babylon.js CDN -->
-    <script src="https://cdn.babylonjs.com/babylon.js"></script>
-    <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
-    <script src="https://cdn.babylonjs.com/materialsLibrary/babylon.gridMaterial.min.js"></script>
-    <script src="https://cdn.babylonjs.com/gui/babylon.gui.min.js"></script>
-    <script src="https://cdn.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
-
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Terminal Viewer</title>
+        <link rel="stylesheet" href="css/styles.css">
+        <!-- Removemos as importações CDN pois agora estão no bundle -->
+    </head>
 <body>
     <canvas id="renderCanvas"></canvas>
     
@@ -101,9 +95,8 @@
         </div>
     </div>
 
-    <!-- Carregamento do script principal como módulo ES -->
-    <!-- Os outros scripts serão importados pelo app.js -->
-    <script type="module" src="dist/app.js"></script> 
+    <!-- Carregamento do bundle -->
+    <script src="dist/bundle.js"></script>
 
 </body>
 </html>
