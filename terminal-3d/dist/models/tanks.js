@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TanksManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a interface de dados
+import { Vector3, TransformNode, MeshBuilder, PBRMaterial, StandardMaterial, Color3 } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb"; // Importar o DB e a interface de dados
 /**
  * TanksManager - Gerenciador de tanques
  *
@@ -19,7 +16,7 @@ const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a int
  * na cena 3D do terminal, buscando dados do InMemoryDatabase.
  * Com otimizações de performance (LOD, Instancing).
  */
-class TanksManager {
+export class TanksManager {
     /**
      * Obtém a instância única do TanksManager (Singleton)
      */
@@ -41,7 +38,7 @@ class TanksManager {
         // Configurações para os tanques (mantida para geometria)
         this._tankConfig = {
             defaultMaterial: {
-                color: new core_1.Color3(0, 0.47, 0.75), // Azul petróleo
+                color: new Color3(0, 0.47, 0.75), // Azul petróleo
                 metallic: 0.3,
                 roughness: 0.4
             },
@@ -85,16 +82,16 @@ class TanksManager {
                 throw new Error("Grupo de tanques não encontrado");
             }
             // Garantir que o grupo de tanques tenha transformação adequada
-            this._tanksGroup.position = core_1.Vector3.Zero();
-            this._tanksGroup.scaling = core_1.Vector3.One();
-            this._tanksGroup.rotation = core_1.Vector3.Zero();
+            this._tanksGroup.position = Vector3.Zero();
+            this._tanksGroup.scaling = Vector3.One();
+            this._tanksGroup.rotation = Vector3.Zero();
             this._tanksGroup.rotationQuaternion = null;
             // Criar materiais para instâncias
-            this._instanceMaterials.stairs = this._createMaterial("stairsMatInstance", new core_1.Color3(0.2, 0.2, 0.2));
-            this._instanceMaterials.sphericalSupport = this._createMaterial("sphericalSupportMatInstance", new core_1.Color3(0.3, 0.3, 0.3));
-            this._instanceMaterials.platform = this._createMaterial("platformMatInstance", new core_1.Color3(0.3, 0.3, 0.3));
-            this._instanceMaterials.connection = this._createMaterial("connectionMatInstance", new core_1.Color3(0.4, 0.4, 0.4));
-            this._instanceMaterials.valve = this._createMaterial("valveMatInstance", new core_1.Color3(0.7, 0.1, 0.1));
+            this._instanceMaterials.stairs = this._createMaterial("stairsMatInstance", new Color3(0.2, 0.2, 0.2));
+            this._instanceMaterials.sphericalSupport = this._createMaterial("sphericalSupportMatInstance", new Color3(0.3, 0.3, 0.3));
+            this._instanceMaterials.platform = this._createMaterial("platformMatInstance", new Color3(0.3, 0.3, 0.3));
+            this._instanceMaterials.connection = this._createMaterial("connectionMatInstance", new Color3(0.4, 0.4, 0.4));
+            this._instanceMaterials.valve = this._createMaterial("valveMatInstance", new Color3(0.7, 0.1, 0.1));
             // Criar meshes fonte para instancing
             this._createSourceMeshes();
         });
@@ -105,27 +102,27 @@ class TanksManager {
     _createSourceMeshes() {
         const scene = SceneManager.scene;
         // Fonte para montante da escada
-        this._sourceMeshes.stairRail = core_1.MeshBuilder.CreateCylinder("stairRailSource", { height: 1, diameter: 0.1 }, scene);
+        this._sourceMeshes.stairRail = MeshBuilder.CreateCylinder("stairRailSource", { height: 1, diameter: 0.1 }, scene);
         this._sourceMeshes.stairRail.material = this._instanceMaterials.stairs;
         this._sourceMeshes.stairRail.setEnabled(false); // Desabilitar mesh fonte
         // Fonte para degrau da escada
-        this._sourceMeshes.stairStep = core_1.MeshBuilder.CreateBox("stairStepSource", { width: 0.8, height: 0.05, depth: 0.2 }, scene);
+        this._sourceMeshes.stairStep = MeshBuilder.CreateBox("stairStepSource", { width: 0.8, height: 0.05, depth: 0.2 }, scene);
         this._sourceMeshes.stairStep.material = this._instanceMaterials.stairs;
         this._sourceMeshes.stairStep.setEnabled(false);
         // Fonte para suporte esférico
-        this._sourceMeshes.sphericalSupport = core_1.MeshBuilder.CreateCylinder("sphericalSupportSource", { height: 1, diameter: 0.1, tessellation: 8 }, scene);
+        this._sourceMeshes.sphericalSupport = MeshBuilder.CreateCylinder("sphericalSupportSource", { height: 1, diameter: 0.1, tessellation: 8 }, scene);
         this._sourceMeshes.sphericalSupport.material = this._instanceMaterials.sphericalSupport;
         this._sourceMeshes.sphericalSupport.setEnabled(false);
         // Fonte para plataforma (torus)
-        this._sourceMeshes.platformTorus = core_1.MeshBuilder.CreateTorus("platformTorusSource", { diameter: 1, thickness: 0.3, tessellation: 24 }, scene);
+        this._sourceMeshes.platformTorus = MeshBuilder.CreateTorus("platformTorusSource", { diameter: 1, thickness: 0.3, tessellation: 24 }, scene);
         this._sourceMeshes.platformTorus.material = this._instanceMaterials.platform;
         this._sourceMeshes.platformTorus.setEnabled(false);
         // Fonte para conexão inferior
-        this._sourceMeshes.bottomConnection = core_1.MeshBuilder.CreateCylinder("bottomConnSource", { height: 0.5, diameter: 0.4 }, scene);
+        this._sourceMeshes.bottomConnection = MeshBuilder.CreateCylinder("bottomConnSource", { height: 0.5, diameter: 0.4 }, scene);
         this._sourceMeshes.bottomConnection.material = this._instanceMaterials.connection;
         this._sourceMeshes.bottomConnection.setEnabled(false);
         // Fonte para válvula (simplificada)
-        this._sourceMeshes.valveBox = core_1.MeshBuilder.CreateBox("valveBoxSource", { width: 0.6, height: 0.6, depth: 0.3 }, scene);
+        this._sourceMeshes.valveBox = MeshBuilder.CreateBox("valveBoxSource", { width: 0.6, height: 0.6, depth: 0.3 }, scene);
         this._sourceMeshes.valveBox.material = this._instanceMaterials.valve;
         this._sourceMeshes.valveBox.setEnabled(false);
     }
@@ -138,7 +135,7 @@ class TanksManager {
                 yield this.initialize();
                 console.log("TanksManager inicializado. Buscando dados de tanques...");
                 // Buscar dados dos tanques do banco de dados em memória
-                const tankDataList = inMemoryDb_1.db.getEquipmentByType("tank");
+                const tankDataList = db.getEquipmentByType("tank");
                 if (tankDataList.length === 0) {
                     console.warn("Nenhum dado de tanque encontrado no InMemoryDatabase.");
                     return;
@@ -162,14 +159,14 @@ class TanksManager {
         const equipmentType = tankData.equipmentType || "standard";
         const typeConfig = this._tankConfig.types[equipmentType] || this._tankConfig.types.standard;
         let position;
-        if (tankData.position instanceof core_1.Vector3) {
+        if (tankData.position instanceof Vector3) {
             position = tankData.position;
         }
         else if (tankData.position) {
-            position = new core_1.Vector3(tankData.position.x || 0, tankData.position.y || 0, tankData.position.z || 0);
+            position = new Vector3(tankData.position.x || 0, tankData.position.y || 0, tankData.position.z || 0);
         }
         else {
-            position = core_1.Vector3.Zero();
+            position = Vector3.Zero();
         }
         let tankNode;
         if (equipmentType === "spherical") {
@@ -195,24 +192,24 @@ class TanksManager {
      */
     _createCylindricalTank(id, config, position) {
         const scene = SceneManager.scene;
-        const tankNode = new core_1.TransformNode(id, scene);
-        tankNode.position = position || core_1.Vector3.Zero();
+        const tankNode = new TransformNode(id, scene);
+        tankNode.position = position || Vector3.Zero();
         tankNode.parent = this._tanksGroup;
         // console.log(`Tanque ${id} - Posição:`, tankNode.position);
         // --- Corpo do Tanque com LOD ---
-        const body = core_1.MeshBuilder.CreateCylinder(`${id}_body`, { height: config.height, diameter: config.diameter, tessellation: config.segments }, scene);
+        const body = MeshBuilder.CreateCylinder(`${id}_body`, { height: config.height, diameter: config.diameter, tessellation: config.segments }, scene);
         body.parent = tankNode;
         body.position.y = config.height / 2;
-        const bodyLOD = core_1.MeshBuilder.CreateCylinder(`${id}_body_lod`, { height: config.height, diameter: config.diameter, tessellation: config.lodSegments }, scene);
+        const bodyLOD = MeshBuilder.CreateCylinder(`${id}_body_lod`, { height: config.height, diameter: config.diameter, tessellation: config.lodSegments }, scene);
         bodyLOD.setEnabled(false);
         body.addLODLevel(this._tankConfig.lodDistance, bodyLOD);
         // console.log(`Tanque ${id} - Corpo criado:`, body, `Dimensões: altura=${config.height}, diâmetro=${config.diameter}`);
         // --- Teto do Tanque com LOD ---
         const roofHeight = config.diameter * 0.15;
-        const roof = core_1.MeshBuilder.CreateCylinder(`${id}_roof`, { height: roofHeight, diameterTop: 0, diameterBottom: config.diameter, tessellation: config.segments }, scene);
+        const roof = MeshBuilder.CreateCylinder(`${id}_roof`, { height: roofHeight, diameterTop: 0, diameterBottom: config.diameter, tessellation: config.segments }, scene);
         roof.parent = tankNode;
         roof.position.y = config.height + (roofHeight / 2);
-        const roofLOD = core_1.MeshBuilder.CreateCylinder(`${id}_roof_lod`, { height: roofHeight, diameterTop: 0, diameterBottom: config.diameter, tessellation: config.lodSegments }, scene);
+        const roofLOD = MeshBuilder.CreateCylinder(`${id}_roof_lod`, { height: roofHeight, diameterTop: 0, diameterBottom: config.diameter, tessellation: config.lodSegments }, scene);
         roofLOD.setEnabled(false);
         roof.addLODLevel(this._tankConfig.lodDistance, roofLOD);
         // --- Plataforma (Instanciada) ---
@@ -243,14 +240,14 @@ class TanksManager {
      */
     _createSphericalTank(id, config, position) {
         const scene = SceneManager.scene;
-        const tankNode = new core_1.TransformNode(id, scene);
-        tankNode.position = position || core_1.Vector3.Zero();
+        const tankNode = new TransformNode(id, scene);
+        tankNode.position = position || Vector3.Zero();
         tankNode.parent = this._tanksGroup;
         // --- Corpo do Tanque (Esfera) com LOD ---
-        const body = core_1.MeshBuilder.CreateSphere(`${id}_body`, { diameter: config.diameter, segments: config.segments }, scene);
+        const body = MeshBuilder.CreateSphere(`${id}_body`, { diameter: config.diameter, segments: config.segments }, scene);
         body.parent = tankNode;
         body.position.y = config.diameter / 2;
-        const bodyLOD = core_1.MeshBuilder.CreateSphere(`${id}_body_lod`, { diameter: config.diameter, segments: config.lodSegments }, scene);
+        const bodyLOD = MeshBuilder.CreateSphere(`${id}_body_lod`, { diameter: config.diameter, segments: config.lodSegments }, scene);
         bodyLOD.setEnabled(false);
         body.addLODLevel(this._tankConfig.lodDistance, bodyLOD);
         // --- Suportes (Instanciados) ---
@@ -269,12 +266,12 @@ class TanksManager {
             }
         }
         // --- Conexões (Simplificado, pode ser instanciado se houver mais) ---
-        const connection = core_1.MeshBuilder.CreateCylinder(`${id}_connection`, { height: config.diameter * 0.4, diameter: config.diameter * 0.15, tessellation: 12 }, scene);
+        const connection = MeshBuilder.CreateCylinder(`${id}_connection`, { height: config.diameter * 0.4, diameter: config.diameter * 0.15, tessellation: 12 }, scene);
         connection.parent = tankNode;
         connection.position.x = config.diameter * 0.7;
         connection.position.y = config.diameter / 2;
         connection.rotation.z = Math.PI / 2;
-        connection.material = this._createMaterial(`${id}_connectionMat`, new core_1.Color3(0.4, 0.4, 0.4));
+        connection.material = this._createMaterial(`${id}_connectionMat`, new Color3(0.4, 0.4, 0.4));
         // --- Material e Seleção ---
         const tankMaterial = this._createPBRMaterial(`${id}_material`);
         body.material = tankMaterial;
@@ -288,9 +285,9 @@ class TanksManager {
     _addTankStairsInstanced(tankNode, id, config) {
         if (!this._sourceMeshes.stairRail || !this._sourceMeshes.stairStep)
             return;
-        const stairsNode = new core_1.TransformNode(`${id}_stairs`, SceneManager.scene);
+        const stairsNode = new TransformNode(`${id}_stairs`, SceneManager.scene);
         stairsNode.parent = tankNode;
-        stairsNode.position = new core_1.Vector3(0, 0, config.diameter / 2);
+        stairsNode.position = new Vector3(0, 0, config.diameter / 2);
         const stairHeight = config.height;
         const stairWidth = 0.8;
         // Montantes (Instanciados)
@@ -335,7 +332,7 @@ class TanksManager {
      */
     _createPBRMaterial(name) {
         const scene = SceneManager.scene;
-        const material = new core_1.PBRMaterial(name, scene);
+        const material = new PBRMaterial(name, scene);
         material.albedoColor = this._tankConfig.defaultMaterial.color;
         material.metallic = this._tankConfig.defaultMaterial.metallic;
         material.roughness = this._tankConfig.defaultMaterial.roughness;
@@ -349,7 +346,7 @@ class TanksManager {
      */
     _createMaterial(name, color) {
         const scene = SceneManager.scene;
-        const material = new core_1.StandardMaterial(name, scene);
+        const material = new StandardMaterial(name, scene);
         material.diffuseColor = color;
         return material;
     }
@@ -378,7 +375,7 @@ class TanksManager {
         // Atualizar no DB
         const tankData = metadata.data;
         tankData.level = Math.max(0, Math.min(1, level));
-        inMemoryDb_1.db.upsertEquipment(tankData); // Atualiza o registro no DB
+        db.upsertEquipment(tankData); // Atualiza o registro no DB
         // TODO: Implementar visualização do nível (pode ser adicionado posteriormente)
         console.log(`Nível do tanque ${id} atualizado para ${level} no DB.`);
         return true;
@@ -396,7 +393,7 @@ class TanksManager {
         // Atualizar no DB
         const tankData = metadata.data;
         tankData.status = status;
-        inMemoryDb_1.db.upsertEquipment(tankData); // Atualiza o registro no DB
+        db.upsertEquipment(tankData); // Atualiza o registro no DB
         // TODO: Implementar mudança visual baseada no status (ex: cor)
         console.log(`Status do tanque ${id} atualizado para ${status} no DB.`);
         return true;
@@ -415,7 +412,4 @@ class TanksManager {
         console.log("Tanques e meshes fonte limpos.");
     }
 }
-exports.TanksManager = TanksManager;
-// Criar instância global para compatibilidade (se necessário)
-// (window as any).TanksManager = TanksManager.getInstance();
 //# sourceMappingURL=tanks.js.map

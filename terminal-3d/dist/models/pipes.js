@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PipesManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a interface de dados
+import { Vector3, TransformNode, MeshBuilder, PBRMaterial, StandardMaterial, Color3, Quaternion } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb"; // Importar o DB e a interface de dados
 /**
  * PipesManager - Gerenciador de tubulações
  *
@@ -19,7 +16,7 @@ const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a int
  * na cena 3D do terminal, buscando dados do InMemoryDatabase.
  * Com otimizações de performance (LOD, Instancing).
  */
-class PipesManager {
+export class PipesManager {
     /**
      * Obtém a instância única do PipesManager (Singleton)
      */
@@ -42,17 +39,17 @@ class PipesManager {
         this._pipeConfig = {
             materials: {
                 standard: {
-                    color: new core_1.Color3(0.5, 0.5, 0.5), // Cinza
+                    color: new Color3(0.5, 0.5, 0.5), // Cinza
                     roughness: 0.6,
                     metallic: 0.7
                 },
                 insulated: {
-                    color: new core_1.Color3(0.8, 0.8, 0.8), // Cinza claro
+                    color: new Color3(0.8, 0.8, 0.8), // Cinza claro
                     roughness: 0.8,
                     metallic: 0.2
                 },
                 highTemp: {
-                    color: new core_1.Color3(0.6, 0.3, 0.3), // Vermelho escuro
+                    color: new Color3(0.6, 0.3, 0.3), // Vermelho escuro
                     roughness: 0.5,
                     metallic: 0.6
                 }
@@ -104,14 +101,14 @@ class PipesManager {
         // Criar materiais para cada tipo de tubulação
         for (const materialType in this._pipeConfig.materials) {
             const config = this._pipeConfig.materials[materialType];
-            const material = new core_1.PBRMaterial(`${materialType}PipeMat_instance`, scene);
+            const material = new PBRMaterial(`${materialType}PipeMat_instance`, scene);
             material.albedoColor = config.color;
             material.metallic = config.metallic;
             material.roughness = config.roughness;
             this._instanceMaterials[materialType] = material;
         }
         // Material para suportes
-        this._instanceMaterials.support = this._createMaterial("supportMat_instance", new core_1.Color3(0.3, 0.3, 0.3));
+        this._instanceMaterials.support = this._createMaterial("supportMat_instance", new Color3(0.3, 0.3, 0.3));
     }
     /**
      * Cria meshes fonte para instancing
@@ -123,21 +120,21 @@ class PipesManager {
             const diameter = this._pipeConfig.diameters[size];
             const tessellation = this._pipeConfig.tessellation[size];
             // Fonte para segmento de tubo
-            this._sourceMeshes[`pipe_${size}`] = core_1.MeshBuilder.CreateCylinder(`pipe_${size}_source`, {
+            this._sourceMeshes[`pipe_${size}`] = MeshBuilder.CreateCylinder(`pipe_${size}_source`, {
                 height: 1, // Será escalado
                 diameter: diameter,
                 tessellation: tessellation
             }, scene);
             this._sourceMeshes[`pipe_${size}`].setEnabled(false);
             // Fonte para conexão
-            this._sourceMeshes[`connection_${size}`] = core_1.MeshBuilder.CreateSphere(`connection_${size}_source`, {
+            this._sourceMeshes[`connection_${size}`] = MeshBuilder.CreateSphere(`connection_${size}_source`, {
                 diameter: diameter * 1.2,
                 segments: tessellation
             }, scene);
             this._sourceMeshes[`connection_${size}`].setEnabled(false);
         }
         // Fonte para suporte de tubulação
-        this._sourceMeshes.pipeSupport = core_1.MeshBuilder.CreateCylinder("pipeSupport_source", {
+        this._sourceMeshes.pipeSupport = MeshBuilder.CreateCylinder("pipeSupport_source", {
             height: 1, // Será escalado
             diameter: 0.1,
             tessellation: 8
@@ -154,7 +151,7 @@ class PipesManager {
                 yield this.initialize();
                 console.log("PipesManager inicializado. Buscando dados de tubulações...");
                 // Buscar dados das tubulações do banco de dados em memória
-                const pipeDataList = inMemoryDb_1.db.getEquipmentByType("pipe");
+                const pipeDataList = db.getEquipmentByType("pipe");
                 if (pipeDataList.length === 0) {
                     console.warn("Nenhum dado de tubulação encontrado no InMemoryDatabase.");
                     return;
@@ -186,10 +183,10 @@ class PipesManager {
         // Determinar o tipo de material
         const materialType = pipeData.materialType || "standard";
         // Criar o nó principal para esta tubulação
-        const pipeNode = new core_1.TransformNode(pipeData.id, SceneManager.scene);
+        const pipeNode = new TransformNode(pipeData.id, SceneManager.scene);
         pipeNode.parent = this._pipesGroup;
         // Converter os pontos para Vector3 se necessário
-        const points = pipeData.points.map(p => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x, p.y, p.z));
+        const points = pipeData.points.map(p => p instanceof Vector3 ? p : new Vector3(p.x, p.y, p.z));
         // Criar segmentos de tubulação entre pontos consecutivos
         for (let i = 0; i < points.length - 1; i++) {
             const segmentId = `${pipeData.id}_segment_${i}`;
@@ -257,7 +254,7 @@ class PipesManager {
             const tessellation = this._pipeConfig.tessellation[size] || this._pipeConfig.tessellation.medium;
             const lodTessellation = this._pipeConfig.tessellation[`lod${size.charAt(0).toUpperCase() + size.slice(1)}`] || tessellation / 2;
             // Criar cilindro para representar o segmento
-            const pipe = core_1.MeshBuilder.CreateCylinder(id, {
+            const pipe = MeshBuilder.CreateCylinder(id, {
                 height: distance,
                 diameter: diameter,
                 tessellation: tessellation
@@ -265,7 +262,7 @@ class PipesManager {
             // Posicionar e orientar o tubo
             this._positionCylinder(pipe, start, end);
             // Criar LOD
-            const pipeLOD = core_1.MeshBuilder.CreateCylinder(`${id}_lod`, {
+            const pipeLOD = MeshBuilder.CreateCylinder(`${id}_lod`, {
                 height: distance,
                 diameter: diameter,
                 tessellation: lodTessellation
@@ -314,7 +311,7 @@ class PipesManager {
             console.warn(`Mesh fonte ${sourceMeshKey} não encontrado, criando conexão diretamente.`);
             const diameter = this._pipeConfig.diameters[size] || this._pipeConfig.diameters.medium;
             const tessellation = this._pipeConfig.tessellation[size] || this._pipeConfig.tessellation.medium;
-            const connection = core_1.MeshBuilder.CreateSphere(id, {
+            const connection = MeshBuilder.CreateSphere(id, {
                 diameter: diameter * 1.2, // Um pouco maior que o tubo
                 segments: tessellation
             }, scene);
@@ -336,12 +333,12 @@ class PipesManager {
     _createPipeSupportsOptimized(pipeData, spacing) {
         if (!this._sourceMeshes.pipeSupport)
             return;
-        const points = pipeData.points.map(p => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x, p.y, p.z));
+        const points = pipeData.points.map(p => p instanceof Vector3 ? p : new Vector3(p.x, p.y, p.z));
         let totalLength = 0;
         for (let i = 0; i < points.length - 1; i++) {
             const start = points[i];
             const end = points[i + 1];
-            const segmentLength = core_1.Vector3.Distance(start, end);
+            const segmentLength = Vector3.Distance(start, end);
             const direction = end.subtract(start).normalize();
             // Calcular número de suportes para este segmento
             const numSupports = Math.floor(segmentLength / spacing);
@@ -353,7 +350,7 @@ class PipesManager {
                 // Posicionar e escalar
                 const supportHeight = supportPosition.y; // Assumindo que o suporte vai do chão (y=0) até a tubulação
                 supportInstance.scaling.y = supportHeight;
-                supportInstance.position = new core_1.Vector3(supportPosition.x, supportHeight / 2, supportPosition.z);
+                supportInstance.position = new Vector3(supportPosition.x, supportHeight / 2, supportPosition.z);
             }
             totalLength += numSupports;
         }
@@ -370,17 +367,17 @@ class PipesManager {
         // Posicionar no ponto médio
         cylinder.position = start.add(direction.scale(0.5));
         // Orientar o cilindro
-        const up = new core_1.Vector3(0, 1, 0);
-        const axis = core_1.Vector3.Cross(up, direction).normalize();
-        const angle = Math.acos(core_1.Vector3.Dot(up, direction.normalize()));
-        cylinder.rotationQuaternion = core_1.Quaternion.RotationAxis(axis, angle);
+        const up = new Vector3(0, 1, 0);
+        const axis = Vector3.Cross(up, direction).normalize();
+        const angle = Math.acos(Vector3.Dot(up, direction.normalize()));
+        cylinder.rotationQuaternion = Quaternion.RotationAxis(axis, angle);
     }
     /**
      * Cria um material PBR
      */
     _createPBRMaterial(name, config) {
         const scene = SceneManager.scene;
-        const material = new core_1.PBRMaterial(name, scene);
+        const material = new PBRMaterial(name, scene);
         material.albedoColor = config.color;
         material.metallic = config.metallic;
         material.roughness = config.roughness;
@@ -391,7 +388,7 @@ class PipesManager {
      */
     _createMaterial(name, color) {
         const scene = SceneManager.scene;
-        const material = new core_1.StandardMaterial(name, scene);
+        const material = new StandardMaterial(name, scene);
         material.diffuseColor = color;
         return material;
     }
@@ -420,7 +417,7 @@ class PipesManager {
         // Atualizar no DB
         const pipeData = metadata.data;
         pipeData.status = status;
-        inMemoryDb_1.db.upsertEquipment(pipeData); // Atualiza o registro no DB
+        db.upsertEquipment(pipeData); // Atualiza o registro no DB
         // TODO: Implementar mudança visual baseada no status (ex: cor, transparência)
         console.log(`Status da tubulação ${id} atualizado para ${status} no DB.`);
         return true;
@@ -439,7 +436,4 @@ class PipesManager {
         console.log("Tubulações e meshes fonte limpos.");
     }
 }
-exports.PipesManager = PipesManager;
-// Criar instância global para compatibilidade (se necessário)
-// (window as any).PipesManager = PipesManager.getInstance();
 //# sourceMappingURL=pipes.js.map

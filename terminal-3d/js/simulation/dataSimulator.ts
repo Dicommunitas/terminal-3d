@@ -234,17 +234,20 @@ export class DataSimulator {
      * @returns O Observer adicionado.
      */
     public addObserver(observer: (eventData: DataUpdateEvent) => void): Observer<DataUpdateEvent> {
+        
+    // @ts-ignore - A API do BabylonJS pode retornar null
         return this.onDataUpdateObservable.add(observer);
     }
 
     /**
-     * Remove um observador.
-     * @param observer - O Observer a ser removido.
-     * @returns true se removido com sucesso, false caso contrário.
-     */
-    public removeObserver(observer: Observer<DataUpdateEvent>): boolean {
-        return this.onDataUpdateObservable.remove(observer);
-    }
+ * Remove um observador.
+ * @param observer - O Observer a ser removido.
+ * @returns true se removido com sucesso, false caso contrário.
+ */
+public removeObserver(observer: Observer<DataUpdateEvent> | null): boolean {
+    if (!observer) return false;
+    return this.onDataUpdateObservable.remove(observer);
+}
 }
 
 // Exportar instância singleton para fácil acesso

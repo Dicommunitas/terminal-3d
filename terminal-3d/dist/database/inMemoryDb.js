@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.db = exports.InMemoryDatabase = void 0;
-const core_1 = require("@babylonjs/core");
+import { Vector3 } from "@babylonjs/core"; // Import Nullable
 /**
  * InMemoryDatabase - Gerencia os dados do terminal em memória.
  *
@@ -9,7 +6,7 @@ const core_1 = require("@babylonjs/core");
  * e coleções NoSQL (Map) para dados como anotações.
  * Implementa o padrão Singleton.
  */
-class InMemoryDatabase {
+export class InMemoryDatabase {
     /**
      * Construtor privado (Singleton)
      */
@@ -18,7 +15,8 @@ class InMemoryDatabase {
             equipment: new Map(),
             annotations: new Map(),
             equipmentByType: new Map(),
-            equipmentByParent: new Map()
+            equipmentByParent: new Map(),
+            equipmentByCategory: new Map() // Inicializar novo índice
         };
         console.log("Instância do InMemoryDatabase criada.");
     }
@@ -39,6 +37,7 @@ class InMemoryDatabase {
         this._db.annotations.clear();
         this._db.equipmentByType.clear();
         this._db.equipmentByParent.clear();
+        this._db.equipmentByCategory.clear(); // Limpar novo índice
         console.log("Banco de dados em memória limpo.");
     }
     /**
@@ -47,13 +46,16 @@ class InMemoryDatabase {
      */
     upsertEquipment(equipmentData) {
         const oldData = this._db.equipment.get(equipmentData.id);
-        // Remover dos índices antigos se existir e o tipo/pai mudou
+        // Remover dos índices antigos se existir e o tipo/pai/categoria mudou
         if (oldData) {
             if (oldData.type !== equipmentData.type) {
                 this._removeFromIndex(this._db.equipmentByType, oldData.type, oldData.id);
             }
             if (oldData.parentId !== equipmentData.parentId) {
                 this._removeFromIndex(this._db.equipmentByParent, oldData.parentId || '', oldData.id);
+            }
+            if (oldData.categoryId !== equipmentData.categoryId) {
+                this._removeFromIndex(this._db.equipmentByCategory, oldData.categoryId || '', oldData.id);
             }
         }
         // Adicionar/Atualizar na tabela principal
@@ -62,6 +64,9 @@ class InMemoryDatabase {
         this._addToIndex(this._db.equipmentByType, equipmentData.type, equipmentData.id);
         if (equipmentData.parentId) {
             this._addToIndex(this._db.equipmentByParent, equipmentData.parentId, equipmentData.id);
+        }
+        if (equipmentData.categoryId) {
+            this._addToIndex(this._db.equipmentByCategory, equipmentData.categoryId, equipmentData.id);
         }
         // console.log(`Equipamento ${equipmentData.id} adicionado/atualizado.`);
     }
@@ -81,6 +86,9 @@ class InMemoryDatabase {
         this._removeFromIndex(this._db.equipmentByType, equipmentData.type, id);
         if (equipmentData.parentId) {
             this._removeFromIndex(this._db.equipmentByParent, equipmentData.parentId, id);
+        }
+        if (equipmentData.categoryId) {
+            this._removeFromIndex(this._db.equipmentByCategory, equipmentData.categoryId, id);
         }
         // TODO: Remover equipamentos filhos recursivamente? Ou anotações associadas?
         console.log(`Equipamento ${id} removido.`);
@@ -120,10 +128,28 @@ class InMemoryDatabase {
         return ids.map(id => this._db.equipment.get(id)).filter(Boolean);
     }
     /**
+     * Busca equipamentos por categoria.
+     * @param categoryId - ID da categoria.
+     * @returns Um array com os dados dos equipamentos na categoria.
+     */
+    getEquipmentByCategory(categoryId) {
+        const ids = this._db.equipmentByCategory.get(categoryId) || [];
+        return ids.map(id => this._db.equipment.get(id)).filter(Boolean);
+    }
+    /**
      * Adiciona ou atualiza uma anotação.
      * @param annotationData - Dados da anotação.
      */
     upsertAnnotation(annotationData) {
+        // Garantir que as datas existam
+        if (!annotationData.dateCreated) {
+            annotationData.dateCreated = new Date();
+        }
+        annotationData.dateModified = new Date(); // Sempre atualiza dateModified
+        // Garantir que o tipo exista?
+        if (!annotationData.type) {
+            annotationData.type = "note"; // Default to 'note' if missing?
+        }
         this._db.annotations.set(annotationData.id, annotationData);
         // console.log(`Anotação ${annotationData.id} adicionada/atualizada.`);
     }
@@ -212,23 +238,40 @@ class InMemoryDatabase {
                         }
                     }
                     // Converte posições e pontos para Vector3 se necessário
-                    if (item.position && !(item.position instanceof core_1.Vector3)) {
-                        item.position = new core_1.Vector3(item.position.x || 0, item.position.y || 0, item.position.z || 0);
+                    if (item.position && !(item.position instanceof Vector3)) {
+                        item.position = new Vector3(item.position.x || 0, item.position.y || 0, item.position.z || 0);
+                    }
+                    if (item.targetPosition && !(item.targetPosition instanceof Vector3)) { // Converter targetPosition também
+                        item.targetPosition = new Vector3(item.targetPosition.x || 0, item.targetPosition.y || 0, item.targetPosition.z || 0);
                     }
                     if (item.points && Array.isArray(item.points)) {
-                        item.points = item.points.map((p) => p instanceof core_1.Vector3 ? p : new core_1.Vector3(p.x || 0, p.y || 0, p.z || 0));
+                        item.points = item.points.map((p) => p instanceof Vector3 ? p : new Vector3(p.x || 0, p.y || 0, p.z || 0));
                     }
-                    this.upsertEquipment(item);
+                    // Garantir que ID existe
+                    if (!item.id) {
+                        item.id = `${item.type}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+                        console.warn(`Item em ${type} não tinha ID. Gerado: ${item.id}`);
+                    }
+                    // Carregar como equipamento ou anotação
+                    if (item.type === 'annotation') { // Assumindo que anotações podem vir nos dados iniciais
+                        if (!item.dateCreated)
+                            item.dateCreated = new Date(); // Use dateCreated
+                        if (!item.author)
+                            item.author = "System";
+                        this.upsertAnnotation(item);
+                    }
+                    else {
+                        this.upsertEquipment(item);
+                    }
                     count++;
                 });
             }
         }
-        console.log(`${count} equipamentos carregados no banco de dados em memória.`);
+        console.log(`${count} itens carregados no banco de dados em memória.`);
     }
 }
-exports.InMemoryDatabase = InMemoryDatabase;
 // Exportar a instância Singleton para fácil acesso
-exports.db = InMemoryDatabase.getInstance();
+export const db = InMemoryDatabase.getInstance();
 // Exemplo de como carregar dados (será feito em outro lugar, como app.ts)
 /*
 import { EquipmentData } from '../data/equipment'; // Supondo que equipment.js seja convertido para TS
@@ -239,5 +282,5 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 */
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.InMemoryDb = exports.db;
+window.InMemoryDb = db;
 //# sourceMappingURL=inMemoryDb.js.map

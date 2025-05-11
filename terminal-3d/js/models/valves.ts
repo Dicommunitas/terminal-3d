@@ -631,4 +631,5 @@ export const valvesManager = ValvesManager.getInstance();
 
 // Disponibilizar no escopo global para compatibilidade (opcional)
 (window as any).ValvesManager = valvesManager;
+//export { ValvesManager };
 

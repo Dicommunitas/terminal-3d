@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.equipmentFactory = exports.EquipmentFactory = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb");
-const tanks_1 = require("../models/tanks");
-const pipes_1 = require("../models/pipes");
-const valves_1 = require("../models/valves");
+import { Color3 } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb";
+import { TanksManager } from "../models/tanks";
+import { PipesManager } from "../models/pipes";
+import { ValvesManager } from "../models/valves";
 /**
  * EquipmentFactory - Fábrica para criação e catalogação de equipamentos 3D
  *
@@ -13,7 +10,7 @@ const valves_1 = require("../models/valves");
  * tipos de equipamentos (Tanques, Tubulações, Válvulas) na cena 3D.
  * Também gerencia o catálogo de equipamentos disponíveis.
  */
-class EquipmentFactory {
+export class EquipmentFactory {
     /**
      * Obtém a instância única do EquipmentFactory (Singleton)
      */
@@ -36,7 +33,7 @@ class EquipmentFactory {
         this._config = {
             tanks: {
                 defaultMaterial: {
-                    color: new core_1.Color3(0, 0.47, 0.75), // Azul petróleo
+                    color: new Color3(0, 0.47, 0.75), // Azul petróleo
                     metallic: 0.3,
                     roughness: 0.4
                 },
@@ -69,17 +66,17 @@ class EquipmentFactory {
             pipes: {
                 materials: {
                     standard: {
-                        color: new core_1.Color3(0.5, 0.5, 0.5), // Cinza
+                        color: new Color3(0.5, 0.5, 0.5), // Cinza
                         roughness: 0.6,
                         metallic: 0.7
                     },
                     insulated: {
-                        color: new core_1.Color3(0.8, 0.8, 0.8), // Cinza claro
+                        color: new Color3(0.8, 0.8, 0.8), // Cinza claro
                         roughness: 0.8,
                         metallic: 0.2
                     },
                     highTemp: {
-                        color: new core_1.Color3(0.6, 0.3, 0.3), // Vermelho escuro
+                        color: new Color3(0.6, 0.3, 0.3), // Vermelho escuro
                         roughness: 0.5,
                         metallic: 0.6
                     }
@@ -106,66 +103,66 @@ class EquipmentFactory {
                     gate: {
                         name: "Gaveta",
                         size: { width: 0.6, height: 0.6, depth: 0.4 },
-                        color: new core_1.Color3(0.7, 0.1, 0.1),
+                        color: new Color3(0.7, 0.1, 0.1),
                         lodTessellation: 8
                     },
                     ball: {
                         name: "Esfera",
                         size: { width: 0.5, height: 0.5, depth: 0.5 },
-                        color: new core_1.Color3(0.7, 0.1, 0.1),
+                        color: new Color3(0.7, 0.1, 0.1),
                         lodTessellation: 8
                     },
                     check: {
                         name: "Retenção",
                         size: { width: 0.6, height: 0.5, depth: 0.4 },
-                        color: new core_1.Color3(0.7, 0.3, 0.1),
+                        color: new Color3(0.7, 0.3, 0.1),
                         lodTessellation: 8
                     },
                     butterfly: {
                         name: "Borboleta",
                         size: { width: 0.4, height: 0.6, depth: 0.3 },
-                        color: new core_1.Color3(0.1, 0.3, 0.7),
+                        color: new Color3(0.1, 0.3, 0.7),
                         lodTessellation: 8
                     },
                     control: {
                         name: "Controle",
                         size: { width: 0.7, height: 0.7, depth: 0.5 },
-                        color: new core_1.Color3(0.1, 0.7, 0.3),
+                        color: new Color3(0.1, 0.7, 0.3),
                         lodTessellation: 8
                     }
                 },
                 states: {
                     open: {
                         name: "Aberta",
-                        color: new core_1.Color3(0.1, 0.7, 0.1),
+                        color: new Color3(0.1, 0.7, 0.1),
                         wheelRotation: Math.PI / 2,
                         diskRotation: Math.PI / 2,
                         sphereRotation: Math.PI / 2
                     },
                     closed: {
                         name: "Fechada",
-                        color: new core_1.Color3(0.7, 0.1, 0.1),
+                        color: new Color3(0.7, 0.1, 0.1),
                         wheelRotation: 0,
                         diskRotation: 0,
                         sphereRotation: 0
                     },
                     partial: {
                         name: "Parcial",
-                        color: new core_1.Color3(0.7, 0.7, 0.1),
+                        color: new Color3(0.7, 0.7, 0.1),
                         wheelRotation: Math.PI / 4,
                         diskRotation: Math.PI / 4,
                         sphereRotation: Math.PI / 4
                     },
                     maintenance: {
                         name: "Manutenção",
-                        color: new core_1.Color3(0.3, 0.3, 0.7),
+                        color: new Color3(0.3, 0.3, 0.7),
                         wheelRotation: 0,
                         diskRotation: 0,
                         sphereRotation: 0
                     },
                     fault: {
                         name: "Falha",
-                        color: new core_1.Color3(0.7, 0.3, 0.1),
+                        color: new Color3(0.7, 0.3, 0.1),
                         wheelRotation: 0,
                         diskRotation: 0,
                         sphereRotation: 0
@@ -519,7 +516,7 @@ class EquipmentFactory {
         const equipmentNode = this.createEquipment(equipmentData);
         // Salvar no banco de dados
         if (equipmentNode) {
-            inMemoryDb_1.db.upsertEquipment(equipmentData);
+            db.upsertEquipment(equipmentData);
             console.log(`Equipamento ${uniqueId} criado a partir do catálogo ${catalogId}`);
         }
         return equipmentNode;
@@ -536,7 +533,7 @@ class EquipmentFactory {
             return null;
         }
         // Usar o TanksManager para criar o tanque
-        const tanksManager = tanks_1.TanksManager.getInstance();
+        const tanksManager = TanksManager.getInstance();
         return tanksManager.createTankFromData(tankData);
     }
     /**
@@ -551,7 +548,7 @@ class EquipmentFactory {
             return null;
         }
         // Usar o PipesManager para criar a tubulação
-        const pipesManager = pipes_1.PipesManager.getInstance();
+        const pipesManager = PipesManager.getInstance();
         return pipesManager.createPipeFromData(pipeData);
     }
     /**
@@ -566,8 +563,8 @@ class EquipmentFactory {
             return null;
         }
         // Usar o ValvesManager para criar a válvula
-        const valvesManager = valves_1.ValvesManager.getInstance();
-        return valvesManager.createValveFromData(valveData);
+        const valvesManager = ValvesManager.getInstance();
+        return valvesManager.createOrUpdateValve(valveData);
     }
     /**
      * Obtém todos os itens do catálogo
@@ -676,9 +673,8 @@ class EquipmentFactory {
         return this._config;
     }
 }
-exports.EquipmentFactory = EquipmentFactory;
 // Exportar instância singleton para fácil acesso
-exports.equipmentFactory = EquipmentFactory.getInstance();
+export const equipmentFactory = EquipmentFactory.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.EquipmentFactory = exports.equipmentFactory;
+window.EquipmentFactory = equipmentFactory;
 //# sourceMappingURL=equipmentFactory.js.map

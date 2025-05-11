@@ -580,3 +580,4 @@ export class PipesManager {
 
 // Criar instância global para compatibilidade (se necessário)
 // (window as any).PipesManager = PipesManager.getInstance();
+//export { PipesManager };

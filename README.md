@@ -17,9 +17,17 @@ O Terminal Viewer é uma aplicação web que oferece uma visualização tridimen
     ```
 3.  **Compile o código TypeScript:**
     ```bash
-    npx tsc
+    npm run build   # Para compilar o projeto
     ```
 4.  **Execute um servidor web local:**
+    Execute o projeto com Webpack. Para iniciar o servidor de desenvolvimento:
+    ```bash
+    npm run start
+    ```
+    Alternativamente, você pode usar para compilação contínua durante o desenvolvimento:
+    ```bash
+    npm run watch
+    ```
     Você pode usar qualquer servidor web simples. Se tiver Python instalado:
     ```bash
     python -m http.server 8000

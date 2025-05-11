@@ -1,15 +1,12 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.dataSimulator = exports.DataSimulator = void 0;
-const inMemoryDb_1 = require("../database/inMemoryDb");
-const core_1 = require("@babylonjs/core");
+import { db } from "../database/inMemoryDb";
+import { Observable } from "@babylonjs/core"; // Add Nullable import
 /**
  * DataSimulator - Simula atualizações de dados em tempo real para equipamentos.
  *
  * Atualiza periodicamente propriedades como nível de tanque, estado de válvula,
  * e notifica observadores sobre as mudanças.
  */
-class DataSimulator {
+export class DataSimulator {
     /**
      * Obtém a instância única do DataSimulator (Singleton)
      */
@@ -27,7 +24,7 @@ class DataSimulator {
         this._simulationSpeed = 5000; // Intervalo em milissegundos (5 segundos)
         this._isRunning = false;
         // Observável para notificar sobre atualizações de dados
-        this.onDataUpdateObservable = new core_1.Observable();
+        this.onDataUpdateObservable = new Observable();
     }
     /**
      * Inicia a simulação de dados.
@@ -89,7 +86,7 @@ class DataSimulator {
     _simulateUpdates() {
         if (!this._isRunning)
             return;
-        const allEquipment = inMemoryDb_1.db.getAllEquipment();
+        const allEquipment = db.getAllEquipment();
         if (allEquipment.length === 0)
             return;
         // Simular atualizações para alguns equipamentos aleatórios
@@ -122,7 +119,7 @@ class DataSimulator {
         newLevel = parseFloat(newLevel.toFixed(3)); // Arredondar
         if (newLevel !== currentLevel) {
             tank.level = newLevel;
-            inMemoryDb_1.db.upsertEquipment(tank); // Atualizar no DB
+            db.upsertEquipment(tank); // Atualizar no DB
             this._notifyUpdate(tank.id, "level", newLevel);
         }
     }
@@ -151,7 +148,7 @@ class DataSimulator {
         }
         if (newState !== currentState) {
             valve.state = newState;
-            inMemoryDb_1.db.upsertEquipment(valve); // Atualizar no DB
+            db.upsertEquipment(valve); // Atualizar no DB
             this._notifyUpdate(valve.id, "state", newState);
         }
     }
@@ -166,7 +163,7 @@ class DataSimulator {
         newFlow = parseFloat(newFlow.toFixed(2));
         if (newFlow !== currentFlow) {
             pipe.flowRate = newFlow;
-            inMemoryDb_1.db.upsertEquipment(pipe); // Atualizar no DB
+            db.upsertEquipment(pipe); // Atualizar no DB
             this._notifyUpdate(pipe.id, "flowRate", newFlow);
         }
         // Simular pressão (exemplo)
@@ -176,7 +173,7 @@ class DataSimulator {
         newPressure = parseFloat(newPressure.toFixed(2));
         if (newPressure !== currentPressure) {
             pipe.pressure = newPressure;
-            inMemoryDb_1.db.upsertEquipment(pipe); // Atualizar no DB
+            db.upsertEquipment(pipe); // Atualizar no DB
             this._notifyUpdate(pipe.id, "pressure", newPressure);
         }
     }
@@ -213,9 +210,8 @@ class DataSimulator {
         return this.onDataUpdateObservable.remove(observer);
     }
 }
-exports.DataSimulator = DataSimulator;
 // Exportar instância singleton para fácil acesso
-exports.dataSimulator = DataSimulator.getInstance();
+export const dataSimulator = DataSimulator.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.DataSimulator = exports.dataSimulator;
+window.DataSimulator = dataSimulator;
 //# sourceMappingURL=dataSimulator.js.map

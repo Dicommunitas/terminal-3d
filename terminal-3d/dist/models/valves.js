@@ -1,4 +1,3 @@
-"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,10 +7,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.valvesManager = exports.ValvesManager = void 0;
-const core_1 = require("@babylonjs/core");
-const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a interface de dados
+import { Vector3, MeshBuilder, StandardMaterial, Color3, Quaternion } from "@babylonjs/core";
+import { db } from "../database/inMemoryDb"; // Importar o DB e a interface de dados
 /**
  * ValvesManager - Gerenciador de válvulas
  *
@@ -19,7 +16,7 @@ const inMemoryDb_1 = require("../database/inMemoryDb"); // Importar o DB e a int
  * na cena 3D do terminal, buscando dados do InMemoryDatabase.
  * Com otimizações de performance (LOD, Instancing).
  */
-class ValvesManager {
+export class ValvesManager {
     /**
      * Obtém a instância única do ValvesManager (Singleton)
      */
@@ -44,66 +41,66 @@ class ValvesManager {
                 gate: {
                     name: "Gaveta",
                     size: { width: 0.6, height: 0.6, depth: 0.4 },
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     lodTessellation: 8
                 },
                 ball: {
                     name: "Esfera",
                     size: { width: 0.5, height: 0.5, depth: 0.5 },
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     lodTessellation: 8
                 },
                 check: {
                     name: "Retenção",
                     size: { width: 0.6, height: 0.5, depth: 0.4 },
-                    color: new core_1.Color3(0.7, 0.3, 0.1),
+                    color: new Color3(0.7, 0.3, 0.1),
                     lodTessellation: 8
                 },
                 butterfly: {
                     name: "Borboleta",
                     size: { width: 0.4, height: 0.6, depth: 0.3 },
-                    color: new core_1.Color3(0.1, 0.3, 0.7),
+                    color: new Color3(0.1, 0.3, 0.7),
                     lodTessellation: 8
                 },
                 control: {
                     name: "Controle",
                     size: { width: 0.7, height: 0.7, depth: 0.5 },
-                    color: new core_1.Color3(0.1, 0.7, 0.3),
+                    color: new Color3(0.1, 0.7, 0.3),
                     lodTessellation: 8
                 }
             },
             states: {
                 open: {
                     name: "Aberta",
-                    color: new core_1.Color3(0.1, 0.7, 0.1),
+                    color: new Color3(0.1, 0.7, 0.1),
                     wheelRotation: Math.PI / 2, // Volante/Alavanca
                     diskRotation: Math.PI / 2, // Disco borboleta
                     sphereRotation: Math.PI / 2 // Esfera interna
                 },
                 closed: {
                     name: "Fechada",
-                    color: new core_1.Color3(0.7, 0.1, 0.1),
+                    color: new Color3(0.7, 0.1, 0.1),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
                 },
                 partial: {
                     name: "Parcial",
-                    color: new core_1.Color3(0.7, 0.7, 0.1),
+                    color: new Color3(0.7, 0.7, 0.1),
                     wheelRotation: Math.PI / 4,
                     diskRotation: Math.PI / 4,
                     sphereRotation: Math.PI / 4
                 },
                 maintenance: {
                     name: "Manutenção",
-                    color: new core_1.Color3(0.3, 0.3, 0.7),
+                    color: new Color3(0.3, 0.3, 0.7),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
                 },
                 fault: {
                     name: "Falha",
-                    color: new core_1.Color3(0.7, 0.3, 0.1),
+                    color: new Color3(0.7, 0.3, 0.1),
                     wheelRotation: 0,
                     diskRotation: 0,
                     sphereRotation: 0
@@ -135,9 +132,9 @@ class ValvesManager {
      * @returns O material criado
      */
     _createMaterial(name, color) {
-        const material = new core_1.StandardMaterial(name, SceneManager.scene);
+        const material = new StandardMaterial(name, SceneManager.scene);
         material.diffuseColor = color;
-        material.specularColor = new core_1.Color3(0.2, 0.2, 0.2);
+        material.specularColor = new Color3(0.2, 0.2, 0.2);
         return material;
     }
     /**
@@ -156,12 +153,12 @@ class ValvesManager {
             this._instanceMaterials[`state_${state}`] = this._createMaterial(`state_${state}_instance`, config.color);
         }
         // Materiais adicionais
-        this._instanceMaterials.wheel = this._createMaterial("wheelMat_instance", new core_1.Color3(0.1, 0.1, 0.1));
-        this._instanceMaterials.actuator = this._createMaterial("actuatorMat_instance", new core_1.Color3(0.2, 0.2, 0.2));
-        this._instanceMaterials.sphereInner = this._createMaterial("sphereInnerMat_instance", new core_1.Color3(0.8, 0.8, 0.8));
-        this._instanceMaterials.disk = this._createMaterial("diskMat_instance", new core_1.Color3(0.7, 0.7, 0.7));
-        this._instanceMaterials.cap = this._createMaterial("capMat_instance", new core_1.Color3(0.6, 0.6, 0.6));
-        this._instanceMaterials.arrow = this._createMaterial("arrowMat_instance", new core_1.Color3(0.1, 0.6, 0.1));
+        this._instanceMaterials.wheel = this._createMaterial("wheelMat_instance", new Color3(0.1, 0.1, 0.1));
+        this._instanceMaterials.actuator = this._createMaterial("actuatorMat_instance", new Color3(0.2, 0.2, 0.2));
+        this._instanceMaterials.sphereInner = this._createMaterial("sphereInnerMat_instance", new Color3(0.8, 0.8, 0.8));
+        this._instanceMaterials.disk = this._createMaterial("diskMat_instance", new Color3(0.7, 0.7, 0.7));
+        this._instanceMaterials.cap = this._createMaterial("capMat_instance", new Color3(0.6, 0.6, 0.6));
+        this._instanceMaterials.arrow = this._createMaterial("arrowMat_instance", new Color3(0.1, 0.6, 0.1));
     }
     /**
      * Cria meshes fonte para instancing
@@ -170,33 +167,33 @@ class ValvesManager {
         const scene = SceneManager.scene;
         const lodDistance = this._valveConfig.lodDistance;
         // --- Corpo das Válvulas --- 
-        this._sourceMeshes.gateValveBody = core_1.MeshBuilder.CreateBox("gateValveBody_source", { width: 1, height: 1, depth: 1 }, scene);
-        this._sourceMeshes.ballValveBody = core_1.MeshBuilder.CreateCylinder("ballValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.butterflyValveBody = core_1.MeshBuilder.CreateCylinder("butterflyValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.checkValveBody = core_1.MeshBuilder.CreateCylinder("checkValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
-        this._sourceMeshes.controlValveBody = core_1.MeshBuilder.CreateCylinder("controlValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.gateValveBody = MeshBuilder.CreateBox("gateValveBody_source", { width: 1, height: 1, depth: 1 }, scene);
+        this._sourceMeshes.ballValveBody = MeshBuilder.CreateCylinder("ballValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.butterflyValveBody = MeshBuilder.CreateCylinder("butterflyValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.checkValveBody = MeshBuilder.CreateCylinder("checkValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
+        this._sourceMeshes.controlValveBody = MeshBuilder.CreateCylinder("controlValveBody_source", { height: 1, diameter: 1, tessellation: 16 }, scene);
         // --- Componentes Internos/Externos --- 
-        this._sourceMeshes.ballValveSphere = core_1.MeshBuilder.CreateSphere("ballValveSphere_source", { diameter: 1, segments: 16 }, scene);
-        this._sourceMeshes.butterflyValveDisk = core_1.MeshBuilder.CreateDisc("butterflyValveDisk_source", { radius: 0.5, tessellation: 16 }, scene); // Radius 0.5 to fit diameter 1
-        this._sourceMeshes.checkValveCap = core_1.MeshBuilder.CreateBox("checkValveCap_source", { width: 1, height: 0.2, depth: 1 }, scene); // Adjusted size
-        this._sourceMeshes.checkValveArrow = core_1.MeshBuilder.CreateCylinder("checkValveArrow_source", { diameterTop: 0, diameterBottom: 0.2, height: 0.3, tessellation: 4 }, scene); // Adjusted size
-        this._sourceMeshes.controlValveActuator = core_1.MeshBuilder.CreateBox("controlValveActuator_source", { width: 0.5, height: 0.6, depth: 0.5 }, scene); // Adjusted size
-        this._sourceMeshes.wheel = core_1.MeshBuilder.CreateTorus("wheel_source", { diameter: 0.4, thickness: 0.05, tessellation: 16 }, scene);
-        this._sourceMeshes.lever = core_1.MeshBuilder.CreateBox("lever_source", { width: 0.5, height: 0.05, depth: 0.05 }, scene); // Adjusted size
-        this._sourceMeshes.stateIndicator = core_1.MeshBuilder.CreateSphere("stateIndicator_source", { diameter: 0.15, segments: 12 }, scene); // Adjusted size
+        this._sourceMeshes.ballValveSphere = MeshBuilder.CreateSphere("ballValveSphere_source", { diameter: 1, segments: 16 }, scene);
+        this._sourceMeshes.butterflyValveDisk = MeshBuilder.CreateDisc("butterflyValveDisk_source", { radius: 0.5, tessellation: 16 }, scene); // Radius 0.5 to fit diameter 1
+        this._sourceMeshes.checkValveCap = MeshBuilder.CreateBox("checkValveCap_source", { width: 1, height: 0.2, depth: 1 }, scene); // Adjusted size
+        this._sourceMeshes.checkValveArrow = MeshBuilder.CreateCylinder("checkValveArrow_source", { diameterTop: 0, diameterBottom: 0.2, height: 0.3, tessellation: 4 }, scene); // Adjusted size
+        this._sourceMeshes.controlValveActuator = MeshBuilder.CreateBox("controlValveActuator_source", { width: 0.5, height: 0.6, depth: 0.5 }, scene); // Adjusted size
+        this._sourceMeshes.wheel = MeshBuilder.CreateTorus("wheel_source", { diameter: 0.4, thickness: 0.05, tessellation: 16 }, scene);
+        this._sourceMeshes.lever = MeshBuilder.CreateBox("lever_source", { width: 0.5, height: 0.05, depth: 0.05 }, scene); // Adjusted size
+        this._sourceMeshes.stateIndicator = MeshBuilder.CreateSphere("stateIndicator_source", { diameter: 0.15, segments: 12 }, scene); // Adjusted size
         // --- Meshes LOD --- 
         const ballLodTess = this._valveConfig.types.ball.lodTessellation || 8;
-        this._sourceMeshes.ballValveBodyLOD = core_1.MeshBuilder.CreateCylinder("ballValveBody_lod", { height: 1, diameter: 1, tessellation: ballLodTess }, scene);
-        this._sourceMeshes.ballValveSphereLOD = core_1.MeshBuilder.CreateSphere("ballValveSphere_lod", { diameter: 1, segments: ballLodTess }, scene);
+        this._sourceMeshes.ballValveBodyLOD = MeshBuilder.CreateCylinder("ballValveBody_lod", { height: 1, diameter: 1, tessellation: ballLodTess }, scene);
+        this._sourceMeshes.ballValveSphereLOD = MeshBuilder.CreateSphere("ballValveSphere_lod", { diameter: 1, segments: ballLodTess }, scene);
         const butterflyLodTess = this._valveConfig.types.butterfly.lodTessellation || 8;
-        this._sourceMeshes.butterflyValveBodyLOD = core_1.MeshBuilder.CreateCylinder("butterflyValveBody_lod", { height: 1, diameter: 1, tessellation: butterflyLodTess }, scene);
-        this._sourceMeshes.butterflyValveDiskLOD = core_1.MeshBuilder.CreateDisc("butterflyValveDisk_lod", { radius: 0.5, tessellation: butterflyLodTess }, scene);
+        this._sourceMeshes.butterflyValveBodyLOD = MeshBuilder.CreateCylinder("butterflyValveBody_lod", { height: 1, diameter: 1, tessellation: butterflyLodTess }, scene);
+        this._sourceMeshes.butterflyValveDiskLOD = MeshBuilder.CreateDisc("butterflyValveDisk_lod", { radius: 0.5, tessellation: butterflyLodTess }, scene);
         const checkLodTess = this._valveConfig.types.check.lodTessellation || 8;
-        this._sourceMeshes.checkValveBodyLOD = core_1.MeshBuilder.CreateCylinder("checkValveBody_lod", { height: 1, diameter: 1, tessellation: checkLodTess }, scene);
+        this._sourceMeshes.checkValveBodyLOD = MeshBuilder.CreateCylinder("checkValveBody_lod", { height: 1, diameter: 1, tessellation: checkLodTess }, scene);
         const controlLodTess = this._valveConfig.types.control.lodTessellation || 8;
-        this._sourceMeshes.controlValveBodyLOD = core_1.MeshBuilder.CreateCylinder("controlValveBody_lod", { height: 1, diameter: 1, tessellation: controlLodTess }, scene);
-        this._sourceMeshes.wheelLOD = core_1.MeshBuilder.CreateTorus("wheel_lod", { diameter: 0.4, thickness: 0.05, tessellation: 8 }, scene);
-        this._sourceMeshes.stateIndicatorLOD = core_1.MeshBuilder.CreateSphere("stateIndicator_lod", { diameter: 0.15, segments: 6 }, scene);
+        this._sourceMeshes.controlValveBodyLOD = MeshBuilder.CreateCylinder("controlValveBody_lod", { height: 1, diameter: 1, tessellation: controlLodTess }, scene);
+        this._sourceMeshes.wheelLOD = MeshBuilder.CreateTorus("wheel_lod", { diameter: 0.4, thickness: 0.05, tessellation: 8 }, scene);
+        this._sourceMeshes.stateIndicatorLOD = MeshBuilder.CreateSphere("stateIndicator_lod", { diameter: 0.15, segments: 6 }, scene);
         // --- Configurar Materiais, LODs e Desabilitar --- 
         Object.keys(this._sourceMeshes).forEach(key => {
             const mesh = this._sourceMeshes[key];
@@ -255,7 +252,7 @@ class ValvesManager {
                 yield this.initialize();
                 console.log("ValvesManager inicializado. Buscando dados de válvulas...");
                 // Buscar dados das válvulas do banco de dados em memória
-                const valveDataList = inMemoryDb_1.db.getEquipmentByType("valve");
+                const valveDataList = db.getEquipmentByType("valve");
                 if (valveDataList.length === 0) {
                     console.warn("Nenhum dado de válvula encontrado no InMemoryDatabase.");
                     return;
@@ -272,231 +269,229 @@ class ValvesManager {
     }
     /**
      * Cria ou atualiza uma válvula na cena com base nos dados.
-     * @param valveData - Dados da válvula (DbValveData).
+     * @param valveData - Dados da válvula do DB.
+     * @returns A instância do mesh principal da válvula ou null em caso de erro.
      */
     createOrUpdateValve(valveData) {
-        if (!this._valvesGroup)
-            return;
-        const valveId = valveData.id;
-        const existingMetadata = this._valveInstances.get(valveId);
+        if (!this._valvesGroup) {
+            console.error("ValvesManager não inicializado.");
+            return null;
+        }
+        const valveType = valveData.valveType;
+        const typeConfig = this._valveConfig.types[valveType];
+        if (!typeConfig) {
+            console.warn(`Tipo de válvula desconhecido: ${valveType}`);
+            return null;
+        }
+        let existingMetadata = this._valveInstances.get(valveData.id);
+        let valveBodyInstance;
+        let wheelOrLeverInstance;
+        let stateIndicatorInstance = null;
+        let ballSphereInstance = null;
+        let butterflyDiskInstance = null;
+        let checkCapInstance = null;
+        let checkArrowInstance = null;
+        let controlActuatorInstance = null;
+        // Determinar qual mesh fonte usar para o corpo
+        let bodySourceMeshKey = `${valveType}ValveBody`;
+        if (!this._sourceMeshes[bodySourceMeshKey]) {
+            console.warn(`Mesh fonte não encontrado para o corpo da válvula: ${bodySourceMeshKey}. Usando gate.`);
+            bodySourceMeshKey = "gateValveBody"; // Fallback
+        }
+        const bodySourceMesh = this._sourceMeshes[bodySourceMeshKey];
+        if (!bodySourceMesh) {
+            console.error(`Mesh fonte ${bodySourceMeshKey} não encontrado!`);
+            return null;
+        }
+        // Determinar qual mesh fonte usar para volante/alavanca
+        let wheelLeverSourceMeshKey = (valveType === "ball" || valveType === "butterfly") ? "lever" : "wheel";
+        const wheelLeverSourceMesh = this._sourceMeshes[wheelLeverSourceMeshKey];
+        if (!wheelLeverSourceMesh) {
+            console.error(`Mesh fonte ${wheelLeverSourceMeshKey} não encontrado!`);
+            return null;
+        }
+        // Mesh fonte para indicador de estado
+        const stateIndicatorSourceMesh = this._sourceMeshes.stateIndicator;
+        // Meshes fonte específicos
+        const ballSphereSource = this._sourceMeshes.ballValveSphere;
+        const butterflyDiskSource = this._sourceMeshes.butterflyValveDisk;
+        const checkCapSource = this._sourceMeshes.checkValveCap;
+        const checkArrowSource = this._sourceMeshes.checkValveArrow;
+        const controlActuatorSource = this._sourceMeshes.controlValveActuator;
         if (existingMetadata) {
-            // Update existing valve
-            this.updateValve(valveData);
+            // Atualizar instância existente
+            valveBodyInstance = existingMetadata.components.body;
+            wheelOrLeverInstance = existingMetadata.components.wheelOrLever;
+            stateIndicatorInstance = existingMetadata.components.stateIndicator || null;
+            ballSphereInstance = existingMetadata.components.ballSphere || null;
+            butterflyDiskInstance = existingMetadata.components.butterflyDisk || null;
+            checkCapInstance = existingMetadata.components.checkCap || null;
+            checkArrowInstance = existingMetadata.components.checkArrow || null;
+            controlActuatorInstance = existingMetadata.components.controlActuator || null;
+            // Atualizar metadados
+            existingMetadata.data = valveData;
+            existingMetadata.state = valveData.state;
+            existingMetadata.valveType = valveType;
+            valveBodyInstance.metadata = existingMetadata; // Atualizar metadados na instância principal
+            console.log(`Atualizando válvula existente: ${valveData.id}`);
         }
         else {
-            // Create new valve
-            this._createValveInstance(valveData);
+            // Criar nova instância
+            valveBodyInstance = bodySourceMesh.createInstance(`valve_${valveData.id}_body`);
+            wheelOrLeverInstance = wheelLeverSourceMesh.createInstance(`valve_${valveData.id}_${wheelLeverSourceMeshKey}`);
+            // Criar indicador de estado se o mesh fonte existir
+            if (stateIndicatorSourceMesh) {
+                stateIndicatorInstance = stateIndicatorSourceMesh.createInstance(`valve_${valveData.id}_indicator`);
+                stateIndicatorInstance.parent = valveBodyInstance; // Anexar ao corpo
+            }
+            // Criar componentes específicos
+            if (valveType === "ball" && ballSphereSource) {
+                ballSphereInstance = ballSphereSource.createInstance(`valve_${valveData.id}_sphere`);
+                ballSphereInstance.parent = valveBodyInstance;
+            }
+            if (valveType === "butterfly" && butterflyDiskSource) {
+                butterflyDiskInstance = butterflyDiskSource.createInstance(`valve_${valveData.id}_disk`);
+                butterflyDiskInstance.parent = valveBodyInstance;
+            }
+            if (valveType === "check" && checkCapSource && checkArrowSource) {
+                checkCapInstance = checkCapSource.createInstance(`valve_${valveData.id}_cap`);
+                checkArrowInstance = checkArrowSource.createInstance(`valve_${valveData.id}_arrow`);
+                checkCapInstance.parent = valveBodyInstance;
+                checkArrowInstance.parent = valveBodyInstance;
+            }
+            if (valveType === "control" && controlActuatorSource) {
+                controlActuatorInstance = controlActuatorSource.createInstance(`valve_${valveData.id}_actuator`);
+                controlActuatorInstance.parent = valveBodyInstance;
+            }
+            valveBodyInstance.parent = this._valvesGroup;
+            wheelOrLeverInstance.parent = valveBodyInstance; // Anexar ao corpo
+            // Criar metadados
+            const metadata = {
+                id: valveData.id,
+                type: "valve",
+                valveType: valveType,
+                state: valveData.state,
+                data: valveData,
+                components: {
+                    body: valveBodyInstance,
+                    wheelOrLever: wheelOrLeverInstance,
+                    stateIndicator: stateIndicatorInstance || undefined,
+                    ballSphere: ballSphereInstance || undefined,
+                    butterflyDisk: butterflyDiskInstance || undefined,
+                    checkCap: checkCapInstance || undefined,
+                    checkArrow: checkArrowInstance || undefined,
+                    controlActuator: controlActuatorInstance || undefined,
+                }
+            };
+            valveBodyInstance.metadata = metadata; // Associar metadados à instância principal
+            this._valveInstances.set(valveData.id, metadata);
+            valveBodyInstance.isPickable = true; // Tornar pickable
+            console.log(`Criando nova válvula: ${valveData.id}`);
         }
+        // Configurar posição e rotação
+        if (valveData.position) {
+            valveBodyInstance.position = valveData.position instanceof Vector3 ? valveData.position : new Vector3(valveData.position.x, valveData.position.y, valveData.position.z);
+        }
+        else {
+            valveBodyInstance.position = Vector3.Zero();
+            console.warn(`Válvula ${valveData.id} sem posição definida.`);
+        }
+        if (valveData.rotation) {
+            valveBodyInstance.rotationQuaternion = Quaternion.FromEulerAngles(valveData.rotation.x || 0, valveData.rotation.y || 0, valveData.rotation.z || 0);
+        }
+        else {
+            valveBodyInstance.rotationQuaternion = Quaternion.Identity();
+        }
+        // Configurar escala do corpo
+        valveBodyInstance.scaling.set(typeConfig.size.width, typeConfig.size.height, typeConfig.size.depth);
+        // Configurar material do corpo
+        valveBodyInstance.material = this._instanceMaterials[valveType] || this._instanceMaterials.gate; // Fallback
+        // Configurar posição e rotação do volante/alavanca
+        // Ajustar posição para ficar em cima do corpo
+        wheelOrLeverInstance.position.y = typeConfig.size.height / 2 + (wheelLeverSourceMeshKey === "lever" ? 0.025 : 0); // Ajuste fino para alavanca
+        // Rotação inicial (eixo X para volante, eixo Y para alavanca?)
+        if (wheelLeverSourceMeshKey === "wheel") {
+            wheelOrLeverInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+        }
+        else {
+            wheelOrLeverInstance.rotationQuaternion = Quaternion.Identity();
+        }
+        // Configurar posições de componentes específicos
+        if (ballSphereInstance) {
+            ballSphereInstance.scaling.set(0.8, 0.8, 0.8); // Esfera um pouco menor que o corpo
+        }
+        if (butterflyDiskInstance) {
+            butterflyDiskInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0); // Disco na vertical inicialmente
+        }
+        if (checkCapInstance) {
+            checkCapInstance.position.y = typeConfig.size.height / 2; // Tampa em cima
+            checkCapInstance.scaling.x = typeConfig.size.width * 0.8; // Ajustar tamanho da tampa
+            checkCapInstance.scaling.z = typeConfig.size.depth * 0.8;
+        }
+        if (checkArrowInstance) {
+            checkArrowInstance.position.y = typeConfig.size.height / 2 + 0.15; // Seta em cima da tampa
+            checkArrowInstance.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+        }
+        if (controlActuatorInstance) {
+            controlActuatorInstance.position.y = typeConfig.size.height / 2 + 0.3; // Atuador em cima
+        }
+        // Aplicar estado visual
+        this.setValveStateVisual(valveData.id, valveData.state);
+        return valveBodyInstance;
     }
     /**
-     * Cria uma nova instância de válvula.
-     * @param valveData - Dados da válvula.
-     * @private
-     */
-    _createValveInstance(valveData) {
-        var _a, _b, _c, _d;
-        if (!this._valvesGroup)
-            return;
-        const valveType = valveData.valveType || "gate";
-        const typeConfig = this._valveConfig.types[valveType] || this._valveConfig.types.gate;
-        const state = (valveData.state || "closed");
-        const stateConfig = this._valveConfig.states[state];
-        const position = new core_1.Vector3(((_a = valveData.position) === null || _a === void 0 ? void 0 : _a.x) || 0, ((_b = valveData.position) === null || _b === void 0 ? void 0 : _b.y) || 0, ((_c = valveData.position) === null || _c === void 0 ? void 0 : _c.z) || 0);
-        const rotationY = ((_d = valveData.rotation) === null || _d === void 0 ? void 0 : _d.y) || 0;
-        // --- Create Instances --- 
-        let bodySourceMesh = null;
-        let wheelOrLeverSourceMesh = null;
-        let ballSphereSourceMesh = null;
-        let butterflyDiskSourceMesh = null;
-        let checkCapSourceMesh = null;
-        let checkArrowSourceMesh = null;
-        let controlActuatorSourceMesh = null;
-        switch (valveType) {
-            case "ball":
-                bodySourceMesh = this._sourceMeshes.ballValveBody;
-                wheelOrLeverSourceMesh = this._sourceMeshes.lever;
-                ballSphereSourceMesh = this._sourceMeshes.ballValveSphere;
-                break;
-            case "butterfly":
-                bodySourceMesh = this._sourceMeshes.butterflyValveBody;
-                wheelOrLeverSourceMesh = this._sourceMeshes.lever;
-                butterflyDiskSourceMesh = this._sourceMeshes.butterflyValveDisk;
-                break;
-            case "check":
-                bodySourceMesh = this._sourceMeshes.checkValveBody;
-                wheelOrLeverSourceMesh = null; // No wheel/lever
-                checkCapSourceMesh = this._sourceMeshes.checkValveCap;
-                checkArrowSourceMesh = this._sourceMeshes.checkValveArrow;
-                break;
-            case "control":
-                bodySourceMesh = this._sourceMeshes.controlValveBody;
-                wheelOrLeverSourceMesh = null; // Actuator instead
-                controlActuatorSourceMesh = this._sourceMeshes.controlValveActuator;
-                break;
-            case "gate":
-            default:
-                bodySourceMesh = this._sourceMeshes.gateValveBody;
-                wheelOrLeverSourceMesh = this._sourceMeshes.wheel;
-                break;
-        }
-        if (!bodySourceMesh) {
-            console.error(`Mesh fonte do corpo não encontrado para tipo ${valveType}`);
-            return;
-        }
-        // Create Body Instance
-        const bodyInstance = bodySourceMesh.createInstance(`${valveData.id}_body`);
-        bodyInstance.position = position;
-        bodyInstance.rotationQuaternion = core_1.Quaternion.RotationYawPitchRoll(rotationY, 0, 0);
-        bodyInstance.scaling.set(typeConfig.size.width, typeConfig.size.height, typeConfig.size.depth);
-        bodyInstance.material = this._instanceMaterials[valveType];
-        bodyInstance.parent = this._valvesGroup;
-        // Create Wheel/Lever Instance
-        let wheelOrLeverInstance = null;
-        if (wheelOrLeverSourceMesh) {
-            wheelOrLeverInstance = wheelOrLeverSourceMesh.createInstance(`${valveData.id}_wheelLever`);
-            wheelOrLeverInstance.parent = bodyInstance; // Attach to body
-            // Adjust position/rotation relative to body based on valve type
-            if (valveType === "gate") {
-                wheelOrLeverInstance.position.y = typeConfig.size.height / 2 + 0.2; // Position wheel on top
-                wheelOrLeverInstance.rotation.x = Math.PI / 2;
-            }
-            else if (valveType === "ball" || valveType === "butterfly") {
-                wheelOrLeverInstance.position.y = typeConfig.size.height / 2 + 0.05; // Position lever on top
-                wheelOrLeverInstance.rotation.z = stateConfig.wheelRotation; // Rotate lever based on state
-            }
-        }
-        // Create State Indicator Instance
-        const stateIndicatorSource = this._sourceMeshes.stateIndicator;
-        const stateIndicatorInstance = stateIndicatorSource.createInstance(`${valveData.id}_state`);
-        stateIndicatorInstance.parent = bodyInstance;
-        stateIndicatorInstance.position.y = typeConfig.size.height / 2 + 0.1; // Position above body
-        stateIndicatorInstance.material = this._instanceMaterials[`state_${state}`];
-        // Create other component instances (sphere, disk, cap, arrow, actuator)
-        let ballSphereInstance = null;
-        if (ballSphereSourceMesh) {
-            ballSphereInstance = ballSphereSourceMesh.createInstance(`${valveData.id}_sphere`);
-            ballSphereInstance.parent = bodyInstance;
-            ballSphereInstance.scaling.set(0.8, 0.8, 0.8); // Scale down slightly
-            ballSphereInstance.rotation.y = stateConfig.sphereRotation || 0;
-        }
-        let butterflyDiskInstance = null;
-        if (butterflyDiskSourceMesh) {
-            butterflyDiskInstance = butterflyDiskSourceMesh.createInstance(`${valveData.id}_disk`);
-            butterflyDiskInstance.parent = bodyInstance;
-            butterflyDiskInstance.rotation.x = stateConfig.diskRotation || 0;
-        }
-        let checkCapInstance = null;
-        if (checkCapSourceMesh) {
-            checkCapInstance = checkCapSourceMesh.createInstance(`${valveData.id}_cap`);
-            checkCapInstance.parent = bodyInstance;
-            checkCapInstance.position.y = typeConfig.size.height / 2; // Position cap on top
-        }
-        let checkArrowInstance = null;
-        if (checkArrowSourceMesh) {
-            checkArrowInstance = checkArrowSourceMesh.createInstance(`${valveData.id}_arrow`);
-            checkArrowInstance.parent = bodyInstance;
-            checkArrowInstance.position.y = typeConfig.size.height / 2 + 0.15; // Position arrow above cap
-            checkArrowInstance.rotation.x = Math.PI / 2;
-        }
-        let controlActuatorInstance = null;
-        if (controlActuatorSourceMesh) {
-            controlActuatorInstance = controlActuatorSourceMesh.createInstance(`${valveData.id}_actuator`);
-            controlActuatorInstance.parent = bodyInstance;
-            controlActuatorInstance.position.y = typeConfig.size.height / 2 + 0.3; // Position actuator on top
-        }
-        // Store metadata
-        const metadata = {
-            id: valveData.id,
-            type: "valve",
-            valveType: valveType,
-            state: state,
-            data: valveData,
-            components: {
-                body: bodyInstance,
-                wheelOrLever: wheelOrLeverInstance,
-                stateIndicator: stateIndicatorInstance,
-                ballSphere: ballSphereInstance || undefined,
-                butterflyDisk: butterflyDiskInstance || undefined,
-                checkCap: checkCapInstance || undefined,
-                checkArrow: checkArrowInstance || undefined,
-                controlActuator: controlActuatorInstance || undefined,
-            }
-        };
-        bodyInstance.metadata = metadata; // Attach metadata to the main body instance
-        this._valveInstances.set(valveData.id, metadata);
-    }
-    /**
-     * Atualiza uma válvula existente com base nos novos dados.
-     * @param valveData - Novos dados da válvula.
-     */
-    updateValve(valveData) {
-        var _a, _b, _c;
-        const metadata = this._valveInstances.get(valveData.id);
-        if (!metadata) {
-            console.warn(`Tentativa de atualizar válvula inexistente: ${valveData.id}`);
-            // Optionally create it if it doesn't exist
-            // this._createValveInstance(valveData);
-            return;
-        }
-        // Update data reference
-        metadata.data = valveData;
-        // Update state if changed
-        const newState = (valveData.state || "closed");
-        if (newState !== metadata.state) {
-            this.setValveState(valveData.id, newState);
-        }
-        // Update position/rotation if changed (optional, might be complex)
-        const newPosition = new core_1.Vector3(((_a = valveData.position) === null || _a === void 0 ? void 0 : _a.x) || 0, ((_b = valveData.position) === null || _b === void 0 ? void 0 : _b.y) || 0, ((_c = valveData.position) === null || _c === void 0 ? void 0 : _c.z) || 0);
-        if (!metadata.components.body.position.equals(newPosition)) {
-            metadata.components.body.position = newPosition;
-        }
-        // Add rotation update if needed
-    }
-    /**
-     * Define o estado visual de uma válvula.
+     * Atualiza o estado visual de uma válvula.
      * @param valveId - ID da válvula.
-     * @param newState - Novo estado ('open', 'closed', 'partial', etc.).
+     * @param state - Novo estado.
      */
-    setValveState(valveId, newState) {
+    setValveStateVisual(valveId, state) {
         const metadata = this._valveInstances.get(valveId);
         if (!metadata) {
-            console.warn(`Válvula com ID ${valveId} não encontrada para definir estado.`);
+            console.warn(`Válvula com ID ${valveId} não encontrada para atualização visual.`);
             return;
         }
-        const stateConfig = this._valveConfig.states[newState];
+        const stateConfig = this._valveConfig.states[state];
         if (!stateConfig) {
-            console.warn(`Configuração de estado inválida: ${newState}`);
+            console.warn(`Configuração de estado desconhecida: ${state}`);
             return;
         }
-        // Update metadata state
-        metadata.state = newState;
-        // Update state in DB data reference as well
-        metadata.data.state = newState;
-        // Update state indicator material
-        if (metadata.components.stateIndicator) {
-            metadata.components.stateIndicator.material = this._instanceMaterials[`state_${newState}`];
+        // Atualizar metadados
+        metadata.state = state;
+        metadata.data.state = state; // Atualizar dados no DB também?
+        // Atualizar rotação do volante/alavanca
+        const wheelLever = metadata.components.wheelOrLever;
+        const originalRotation = wheelLever.rotationQuaternion ? wheelLever.rotationQuaternion.toEulerAngles() : Vector3.Zero();
+        if (metadata.valveType === "ball" || metadata.valveType === "butterfly") {
+            // Rotação da alavanca (eixo Y)
+            wheelLever.rotationQuaternion = Quaternion.FromEulerAngles(originalRotation.x, stateConfig.wheelRotation, originalRotation.z);
         }
-        // Update wheel/lever rotation
-        if (metadata.components.wheelOrLever && (metadata.valveType === "ball" || metadata.valveType === "butterfly")) {
-            metadata.components.wheelOrLever.rotation.z = stateConfig.wheelRotation;
+        else {
+            // Rotação do volante (eixo Z local? ou Y global?)
+            // Assumindo rotação em torno do eixo Y global para simplicidade
+            wheelLever.rotationQuaternion = Quaternion.FromEulerAngles(Math.PI / 2, stateConfig.wheelRotation, 0);
         }
-        // Add rotation update for gate valve wheel if needed
-        // Update internal components rotation (sphere, disk)
+        // Atualizar rotação de componentes internos
         if (metadata.components.ballSphere && stateConfig.sphereRotation !== undefined) {
-            metadata.components.ballSphere.rotation.y = stateConfig.sphereRotation;
+            metadata.components.ballSphere.rotationQuaternion = Quaternion.FromEulerAngles(0, stateConfig.sphereRotation, 0);
         }
         if (metadata.components.butterflyDisk && stateConfig.diskRotation !== undefined) {
-            metadata.components.butterflyDisk.rotation.x = stateConfig.diskRotation;
+            // Rotação do disco em torno do eixo Z local (após rotação inicial)
+            const initialDiskRotation = Quaternion.FromEulerAngles(Math.PI / 2, 0, 0);
+            const stateRotation = Quaternion.FromEulerAngles(0, 0, stateConfig.diskRotation);
+            metadata.components.butterflyDisk.rotationQuaternion = initialDiskRotation.multiply(stateRotation);
         }
-        // console.log(`Estado da válvula ${valveId} definido para ${newState}`);
-    }
-    /**
-     * Obtém os metadados de uma válvula pelo ID.
-     * @param valveId - ID da válvula.
-     * @returns Os metadados da válvula ou undefined.
-     */
-    getValveMetadata(valveId) {
-        return this._valveInstances.get(valveId);
+        // Atualizar cor do indicador de estado
+        if (metadata.components.stateIndicator) {
+            const indicatorMaterial = this._instanceMaterials[`state_${state}`];
+            if (indicatorMaterial) {
+                // Clonar material para a instância específica
+                const instanceMat = indicatorMaterial.clone(`${metadata.components.stateIndicator.name}_mat`);
+                metadata.components.stateIndicator.material = instanceMat;
+            }
+            else {
+                metadata.components.stateIndicator.material = this._instanceMaterials.state_closed; // Fallback
+            }
+        }
     }
     /**
      * Remove uma válvula da cena.
@@ -505,39 +500,43 @@ class ValvesManager {
     removeValve(valveId) {
         const metadata = this._valveInstances.get(valveId);
         if (metadata) {
-            // Dispose all component instances
-            Object.values(metadata.components).forEach((component) => {
-                component === null || component === void 0 ? void 0 : component.dispose();
+            // Dispose de todos os componentes
+            Object.values(metadata.components).forEach(instance => {
+                if (instance) {
+                    // Dispose do material clonado se houver
+                    if (instance.material && instance.material !== this._instanceMaterials[metadata.valveType] && !Object.values(this._instanceMaterials).includes(instance.material)) {
+                        instance.material.dispose();
+                    }
+                    instance.dispose();
+                }
             });
             this._valveInstances.delete(valveId);
-            console.log(`Válvula ${valveId} removida.`);
+            console.log(`Válvula ${valveId} removida da cena.`);
         }
         else {
-            console.warn(`Válvula com ID ${valveId} não encontrada para remoção.`);
+            console.warn(`Tentativa de remover válvula inexistente: ${valveId}`);
         }
     }
     /**
-     * Limpa todas as válvulas e recursos relacionados.
+     * Obtém os metadados de uma válvula pelo ID.
+     * @param valveId - ID da válvula.
+     * @returns Os metadados ou undefined.
      */
-    dispose() {
-        // Dispose all instances
-        this._valveInstances.forEach(metadata => {
-            Object.values(metadata.components).forEach((component) => {
-                component === null || component === void 0 ? void 0 : component.dispose();
-            });
-        });
-        this._valveInstances.clear();
-        // Dispose source meshes
-        Object.values(this._sourceMeshes).forEach((mesh) => mesh.dispose());
-        this._sourceMeshes = {};
-        // Dispose instance materials
-        Object.values(this._instanceMaterials).forEach((mat) => mat.dispose());
-        this._instanceMaterials = {};
-        this._valvesGroup = null;
-        console.log("ValvesManager disposed.");
+    getValveMetadata(valveId) {
+        return this._valveInstances.get(valveId);
+    }
+    /**
+     * Obtém a instância principal (corpo) de uma válvula pelo ID.
+     * @param valveId - ID da válvula.
+     * @returns A instância do corpo ou null.
+     */
+    getValveInstance(valveId) {
+        var _a;
+        return ((_a = this._valveInstances.get(valveId)) === null || _a === void 0 ? void 0 : _a.components.body) || null;
     }
 }
-exports.ValvesManager = ValvesManager;
-// Exportar instância singleton para fácil acesso
-exports.valvesManager = ValvesManager.getInstance();
+// Exportar a instância Singleton para fácil acesso
+export const valvesManager = ValvesManager.getInstance();
+// Disponibilizar no escopo global para compatibilidade (opcional)
+window.ValvesManager = valvesManager;
 //# sourceMappingURL=valves.js.map

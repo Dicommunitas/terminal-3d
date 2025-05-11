@@ -1,14 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.versionManager = exports.VersionManager = void 0;
-const inMemoryDb_1 = require("../database/inMemoryDb");
+import { db } from "../database/inMemoryDb";
 /**
  * VersionManager - Gerencia diferentes versões do modelo do terminal.
  *
  * Permite criar, listar e carregar versões conceituais dos dados.
  * Assume que os dados no InMemoryDatabase possuem um campo `versionId`.
  */
-class VersionManager {
+export class VersionManager {
     /**
      * Obtém a instância única do VersionManager (Singleton)
      */
@@ -33,8 +30,8 @@ class VersionManager {
         // Tenta criar uma versão inicial baseada nos dados atuais (se houver)
         // Ou apenas define uma versão "main"/"latest"
         const initialVersionId = "main_v1";
-        const existingData = inMemoryDb_1.db.getAllEquipment(); // Assume que dados iniciais já foram carregados
-        const existingAnnotations = inMemoryDb_1.db.getAllAnnotations();
+        const existingData = db.getAllEquipment(); // Assume que dados iniciais já foram carregados
+        const existingAnnotations = db.getAllAnnotations();
         if (existingData.length > 0 || existingAnnotations.length > 0) {
             this.createVersion(initialVersionId, "Versão Inicial", "Versão carregada inicialmente");
             this.setActiveVersionId(initialVersionId);
@@ -73,8 +70,8 @@ class VersionManager {
         }
         // Contar equipamentos e anotações atuais (assumindo que representam o estado a ser versionado)
         // Idealmente, filtraríamos pelo baseVersionId se ele fosse fornecido
-        const currentEquipment = inMemoryDb_1.db.getAllEquipment();
-        const currentAnnotations = inMemoryDb_1.db.getAllAnnotations();
+        const currentEquipment = db.getAllEquipment();
+        const currentAnnotations = db.getAllAnnotations();
         const newVersion = {
             id: newVersionId,
             name,
@@ -112,25 +109,25 @@ class VersionManager {
         let annotationCount = 0;
         // 1. Copiar todos os equipamentos da versão ativa (ou todos se não houver ativa)
         const equipmentToSnapshot = baseVersionId
-            ? inMemoryDb_1.db.getAllEquipment().filter(eq => eq.versionId === baseVersionId)
-            : inMemoryDb_1.db.getAllEquipment();
+            ? db.getAllEquipment().filter(eq => eq.versionId === baseVersionId)
+            : db.getAllEquipment();
         equipmentToSnapshot.forEach(eq => {
             // Criar uma cópia profunda e atribuir o novo versionId
             const newEq = JSON.parse(JSON.stringify(eq)); // Cópia profunda simples
             newEq.versionId = newVersionId;
             // O ID do equipamento em si deve permanecer o mesmo?
             // Ou gerar novos IDs para a versão? Manter o mesmo ID parece mais útil.
-            inMemoryDb_1.db.upsertEquipment(newEq); // Salva a cópia com novo versionId
+            db.upsertEquipment(newEq); // Salva a cópia com novo versionId
             equipmentCount++;
         });
         // 2. Copiar todas as anotações da versão ativa
         const annotationsToSnapshot = baseVersionId
-            ? inMemoryDb_1.db.getAllAnnotations().filter(an => an.versionId === baseVersionId)
-            : inMemoryDb_1.db.getAllAnnotations();
+            ? db.getAllAnnotations().filter(an => an.versionId === baseVersionId)
+            : db.getAllAnnotations();
         annotationsToSnapshot.forEach(an => {
             const newAn = JSON.parse(JSON.stringify(an));
             newAn.versionId = newVersionId;
-            inMemoryDb_1.db.upsertAnnotation(newAn);
+            db.upsertAnnotation(newAn);
             annotationCount++;
         });
         // 3. Criar metadados da versão
@@ -199,7 +196,7 @@ class VersionManager {
             return [];
         // Esta é uma simplificação. O DB precisaria de um índice por versionId
         // ou teríamos que filtrar todos os equipamentos.
-        return inMemoryDb_1.db.getAllEquipment().filter(eq => eq.versionId === versionId);
+        return db.getAllEquipment().filter(eq => eq.versionId === versionId);
     }
     /**
      * Obtém os dados das anotações para uma versão específica.
@@ -210,7 +207,7 @@ class VersionManager {
     getAnnotationsForVersion(versionId) {
         if (!this._versions.has(versionId))
             return [];
-        return inMemoryDb_1.db.getAllAnnotations().filter(an => an.versionId === versionId);
+        return db.getAllAnnotations().filter(an => an.versionId === versionId);
     }
     /**
      * Remove uma versão (metadados e, opcionalmente, dados associados).
@@ -232,9 +229,9 @@ class VersionManager {
         if (removeData) {
             console.warn(`Removendo dados associados à versão ${versionId}...`);
             const equipmentToRemove = this.getEquipmentForVersion(versionId);
-            equipmentToRemove.forEach(eq => inMemoryDb_1.db.deleteEquipment(eq.id)); // CUIDADO: Isso remove o equipamento completamente se o ID for compartilhado!
+            equipmentToRemove.forEach(eq => db.deleteEquipment(eq.id)); // CUIDADO: Isso remove o equipamento completamente se o ID for compartilhado!
             const annotationsToRemove = this.getAnnotationsForVersion(versionId);
-            annotationsToRemove.forEach(an => inMemoryDb_1.db.deleteAnnotation(an.id));
+            annotationsToRemove.forEach(an => db.deleteAnnotation(an.id));
             console.warn(`Dados da versão ${versionId} removidos (equipamentos: ${equipmentToRemove.length}, anotações: ${annotationsToRemove.length}).`);
         }
         // Remover metadados
@@ -243,9 +240,8 @@ class VersionManager {
         return true;
     }
 }
-exports.VersionManager = VersionManager;
 // Exportar instância singleton para fácil acesso
-exports.versionManager = VersionManager.getInstance();
+export const versionManager = VersionManager.getInstance();
 // Disponibilizar no escopo global para compatibilidade (opcional)
-window.VersionManager = exports.versionManager;
+window.VersionManager = versionManager;
 //# sourceMappingURL=versionManager.js.map

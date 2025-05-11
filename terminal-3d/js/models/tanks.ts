@@ -492,3 +492,4 @@ export class TanksManager {
 
 // Criar instância global para compatibilidade (se necessário)
 // (window as any).TanksManager = TanksManager.getInstance();
+//export { TanksManager };

@@ -699,3 +699,4 @@ export class LoadingAreasManager {
     updateLoadingAreaState: (id: string, newState: string) => LoadingAreasManager.getInstance().updateLoadingAreaState(id, newState),
     clearLoadingAreas: () => LoadingAreasManager.getInstance().clearLoadingAreas()
 };
+//export { LoadingAreasManager };
