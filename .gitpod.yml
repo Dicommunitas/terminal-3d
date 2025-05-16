@@ -2,24 +2,47 @@
 tasks:
   - name: Setup Python 3.11
     init: |
-      pyenv install 3.11.9
+      # Instala pyenv se necessário
+      curl https://pyenv.run | bash
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+      
+      # Força instalação do Python 3.11.9 sem prompts
+      pyenv install -f 3.11.9
       pyenv global 3.11.9
+      python --version
+
   - name: Install Dependencies
     init: |
-      set -e  # Faz o script falhar imediatamente em caso de erro
-      echo "Instalando MetaGPT e dependências..."
-      python3 -m pip install --upgrade pip setuptools wheel
-      pip install numpy==1.26.0  # Versão compatível com Python 3.11+
+      set -e # Sai imediatamente em caso de erro
+      echo "🐍 Instalando MetaGPT e dependências..."
+      
+      # Configura ambiente Python
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      eval "$(pyenv init -)"
+      
+      # Instala dependências
+      pip install --upgrade pip setuptools wheel
+      pip install numpy==1.26.0
       pip install metagpt
+      
+      # Verifica instalação
+      if ! which metagpt >/dev/null; then
+        echo "❌ Falha na instalação do MetaGPT!"
+        exit 1
+      fi
       gp sync-done deps_installed
-  - name: Welcome Message
+
+  - name: Welcome
     command: |
       gp sync-await deps_installed
-      echo ""
-      echo "✅ Tudo pronto! Use: metagpt 'sua pergunta'"
-      echo "👉 Configure suas API keys em: https://gitpod.io/user/variables"
-      echo ""
-      
+      echo -e "\n\033[32m✅ Tudo pronto! Use:\033[0m"
+      echo "metagpt 'sua pergunta'"
+      echo -e "\n\033[33m👉 Configure suas API keys em:\033[0m"
+      echo "https://gitpod.io/user/variables"
+
 # List the ports to expose. Learn more: https://www.gitpod.io/docs/configure/workspaces/ports
 ports:
   - name: Frontend
