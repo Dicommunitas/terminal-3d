@@ -1,8 +1,7 @@
 # .gitignore
 
 # Configurações sensíveis do MetaGPT
-.metagpt/*
-!.metagpt/workspace
+.metagpt/config2.yaml
 
 # Diretório de workspace do MetaGPT (opcional)
 #/metagpt/workspace/
