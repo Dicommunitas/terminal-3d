@@ -1,30 +1,45 @@
 # .gitpod.yml
 tasks:
-  - name: Setup MetaGPT Docker
+  - name: Docker Setup
     init: |
-      # Criar diretórios necessários
-      sudo mkdir -p /opt/metagpt/{config,workspace}
-      sudo chown -R gitpod:gitpod /opt/metagpt
+      # Criar estrutura de diretórios
+      mkdir -p /workspace/metagpt/{config,workspace}
       
-      # Baixar a imagem oficial
+      # Baixar imagem Docker oficial
       docker pull metagpt/metagpt:latest
       
-      # Configurar arquivo padrão se não existir
-      if [ ! -f /opt/metagpt/config/config2.yaml ]; then
-        docker run --rm metagpt/metagpt:latest cat /app/metagpt/config/config2.yaml > /opt/metagpt/config/config2.yaml
+      # Criar arquivo de configuração padrão se não existir
+      if [ ! -f /workspace/metagpt/config/config2.yaml ]; then
+        docker run --rm metagpt/metagpt:latest cat /app/metagpt/config/config2.yaml > /workspace/metagpt/config/config2.yaml
+        sed -i "s/api_key:.*/api_key: \"${OPENAI_API_KEY}\"/" /workspace/metagpt/config/config2.yaml
       fi
+      
+      # Sinalizar conclusão
+      gp sync-done docker_ready
 
-  - name: Start MetaGPT
+  - name: MetaGPT Runner
     command: |
+      # Esperar Docker estar pronto
+      gp sync-await docker_ready
+      
+      # Mensagem de boas-vindas
       echo -e "\n\033[32m✅ MetaGPT Docker está pronto!\033[0m"
-      echo "Comandos disponíveis:"
-      echo "1. Executar diretamente:"
-      echo '   docker run -it --rm --privileged -v /opt/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /opt/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest metagpt "sua pergunta"'
-      echo "2. Acessar o container:"
-      echo '   docker run -it --name metagpt --privileged -v /opt/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /opt/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest'
-      echo -e "\n\033[33m🔑 Configure sua API_KEY em:\033[0m"
-      echo "nano /opt/metagpt/config/config2.yaml"
+      echo -e "Variáveis de ambiente detectadas:"
+      echo -e "OPENAI_API_KEY: ${OPENAI_API_KEY:+*****}"
+      echo -e "\n\033[1mComo usar:\033[0m"
+      echo -e "1. Execute diretamente:"
+      echo -e "   \033[36mmetagpt 'sua pergunta'\033[0m"
+      echo -e "2. Acesse o container:"
+      echo -e "   \033[36mdocker-shell\033[0m"
+      
+      # Criar alias para comandos rápidos
+      echo -e "\nalias metagpt='docker run -it --rm --privileged -v /workspace/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /workspace/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest metagpt'" >> ~/.bashrc
+      echo -e "alias docker-shell='docker run -it --rm --privileged -v /workspace/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /workspace/metagpt/workspace:/app/metagpt/workspace --entrypoint /bin/bash metagpt/metagpt:latest'" >> ~/.bashrc
+      
+      # Recarregar bashrc
+      source ~/.bashrc
 
 ports:
   - port: 3000
-    onOpen: ignore
+    onOpen: open-preview
+    visibility: public
