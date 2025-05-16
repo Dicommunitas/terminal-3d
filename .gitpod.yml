@@ -1,17 +1,30 @@
 # .gitpod.yml
-image:
-  file: .gitpod.Dockerfile
+tasks:
+  - name: Setup MetaGPT Docker
+    init: |
+      # Criar diretórios necessários
+      sudo mkdir -p /opt/metagpt/{config,workspace}
+      sudo chown -R gitpod:gitpod /opt/metagpt
+      
+      # Baixar a imagem oficial
+      docker pull metagpt/metagpt:latest
+      
+      # Configurar arquivo padrão se não existir
+      if [ ! -f /opt/metagpt/config/config2.yaml ]; then
+        docker run --rm metagpt/metagpt:latest cat /app/metagpt/config/config2.yaml > /opt/metagpt/config/config2.yaml
+      fi
+
+  - name: Start MetaGPT
+    command: |
+      echo -e "\n\033[32m✅ MetaGPT Docker está pronto!\033[0m"
+      echo "Comandos disponíveis:"
+      echo "1. Executar diretamente:"
+      echo '   docker run -it --rm --privileged -v /opt/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /opt/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest metagpt "sua pergunta"'
+      echo "2. Acessar o container:"
+      echo '   docker run -it --name metagpt --privileged -v /opt/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /opt/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest'
+      echo -e "\n\033[33m🔑 Configure sua API_KEY em:\033[0m"
+      echo "nano /opt/metagpt/config/config2.yaml"
 
 ports:
   - port: 3000
     onOpen: ignore
-
-tasks:
-  - name: Inicialização do MetaGPT
-    init: |
-      docker build -t metagpt .
-    command: |
-      echo -e "\n\033[32m✅ Ambiente Docker pronto!\033[0m"
-      echo "Use: docker run -it --rm metagpt metagpt 'sua pergunta'"
-      echo -e "\n\033[33m🔑 Configure as variáveis de ambiente no arquivo .env:\033[0m"
-      echo "OPENAI_API_KEY=suachaveaqui"
