@@ -1,0 +1,33 @@
+# List the start up tasks. Learn more: https://www.gitpod.io/docs/configure/workspaces/tasks
+tasks:
+  - name: Script Task
+    init: echo 'init script' # runs during prebuild => https://www.gitpod.io/docs/configure/projects/prebuilds
+    command: echo 'start script'
+  - name: Install Dependencies
+    init: |
+      echo "Installing MetaGPT and project dependencies..."
+      python3 -m pip install --upgrade pip
+      pip install metagpt
+      # Se tiver um requirements.txt para seu projeto:
+      # pip install -r requirements.txt
+      echo "Installation complete."
+      gp sync-done deps_installed # Sinaliza que tudo foi instalado
+  - name: Welcome Message
+    command: | # Ou init, dependendo se você quer que apareça no log do prebuild ou no terminal ativo
+      gp sync-await deps_installed # Espera a instalação
+      echo ""
+      echo "✅ MetaGPT está instalado e pronto para uso!"
+      echo "   Exemplo: metagpt 'Crie um script Python para organizar arquivos por extensão'"
+      echo ""
+      echo "👉 Lembre-se de configurar suas chaves de API (ex: OPENAI_API_KEY) nas variáveis de ambiente do Gitpod:"
+      echo "   https://gitpod.io/user/variables"
+      echo ""
+
+# List the ports to expose. Learn more: https://www.gitpod.io/docs/configure/workspaces/ports
+ports:
+  - name: Frontend
+    description: Port 3000 for the frontend
+    port: 3000
+    onOpen: open-preview
+
+# Learn more from ready-to-use templates: https://www.gitpod.io/docs/introduction/getting-started/quickstart
