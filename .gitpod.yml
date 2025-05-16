@@ -2,17 +2,20 @@
 tasks:
   - name: Docker Setup
     init: |
-      # Criar estrutura de diretórios
-      mkdir -p /workspace/metagpt/{config,workspace}
+      # Criar estrutura de diretórios dentro do repositório
+      mkdir -p .metagpt/workspace
       
       # Baixar imagem Docker oficial
       docker pull metagpt/metagpt:latest
       
-      # Criar arquivo de configuração padrão se não existir
-      if [ ! -f /workspace/metagpt/config/config2.yaml ]; then
-        docker run --rm metagpt/metagpt:latest cat /app/metagpt/config/config2.yaml > /workspace/metagpt/config/config2.yaml
-        sed -i "s/api_key:.*/api_key: \"${OPENAI_API_KEY}\"/" /workspace/metagpt/config/config2.yaml
-      fi
+      # Configurar arquivo com modelo Qwen
+      cat << EOF > .metagpt/config2.yaml
+      llm:
+        api_type: "openai"
+        api_key: "${HUGGINGFACE_QWQ32B}"
+        model: "Qwen/QwQ-32B"
+        base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
+      EOF
       
       # Sinalizar conclusão
       gp sync-done docker_ready
@@ -23,20 +26,21 @@ tasks:
       gp sync-await docker_ready
       
       # Mensagem de boas-vindas
-      echo -e "\n\033[32m✅ MetaGPT Docker está pronto!\033[0m"
-      echo -e "Variáveis de ambiente detectadas:"
-      echo -e "OPENAI_API_KEY: ${OPENAI_API_KEY:+*****}"
+      echo -e "\n\033[32m✅ Ambiente Configurado!\033[0m"
+      echo -e "Modelo: \033[36mQwen/QwQ-32B\033[0m"
+      echo -e "API Key: ${HUGGINGFACE_QWQ32B:+*****}"
       echo -e "\n\033[1mComo usar:\033[0m"
-      echo -e "1. Execute diretamente:"
+      echo -e "1. Executar comando direto:"
       echo -e "   \033[36mmetagpt 'sua pergunta'\033[0m"
-      echo -e "2. Acesse o container:"
-      echo -e "   \033[36mdocker-shell\033[0m"
+      echo -e "2. Acessar arquivos gerados:"
+      echo -e "   \033[36mcd metagpt/workspace && ls\033[0m"
       
-      # Criar alias para comandos rápidos
-      echo -e "\nalias metagpt='docker run -it --rm --privileged -v /workspace/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /workspace/metagpt/workspace:/app/metagpt/workspace metagpt/metagpt:latest metagpt'" >> ~/.bashrc
-      echo -e "alias docker-shell='docker run -it --rm --privileged -v /workspace/metagpt/config/config2.yaml:/app/metagpt/config/config2.yaml -v /workspace/metagpt/workspace:/app/metagpt/workspace --entrypoint /bin/bash metagpt/metagpt:latest'" >> ~/.bashrc
+      # Criar alias para o comando
+      echo -e "\nalias metagpt='docker run -it --rm --privileged \\
+        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \\
+        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \\
+        metagpt/metagpt:latest metagpt'" >> ~/.bashrc
       
-      # Recarregar bashrc
       source ~/.bashrc
 
 ports:
