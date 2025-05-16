@@ -1,7 +1,7 @@
 tasks:
   - name: Docker Setup
     command: |
-      set -ex
+      #set -ex
       mkdir -p .metagpt metagpt/workspace
       echo "📂 Estrutura de diretórios criada"
       echo "⬇️ Baixando imagem MetaGPT..."
