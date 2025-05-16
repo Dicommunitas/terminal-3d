@@ -1,5 +1,5 @@
 llm:
   api_type: "openai"
-  api_key: ""
+  api_key: "chave_aqui"
   model: "Qwen/QwQ-32B"
   base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"

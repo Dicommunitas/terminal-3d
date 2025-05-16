@@ -1,0 +1,7 @@
+# Ignorar configurações sensíveis
+.metagpt/config2.yaml
+
+# Ignorar arquivos temporários do Docker
+**/.dockerignore
+**/.env
+**/docker-compose*.yml
