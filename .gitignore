@@ -1,7 +1,28 @@
-# Ignorar configurações sensíveis
-.metagpt/config2.yaml
+# .gitignore
 
-# Ignorar arquivos temporários do Docker
-**/.dockerignore
-**/.env
-**/docker-compose*.yml
+# Configurações sensíveis do MetaGPT
+/.metagpt/config2.yaml
+
+# Diretório de workspace do MetaGPT (opcional)
+#/metagpt/workspace/
+
+# Arquivos do Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Dependências do Node
+/node_modules/
+
+# Builds e arquivos gerados
+/dist/
+*.log
+*.tmp
+
+# Configurações de IDE
+.idea/
+.vscode/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db

@@ -2,44 +2,62 @@
 tasks:
   - name: Docker Setup
     init: |
-      # Criar estrutura de diretórios
+      set -ex # Ativa modo debug e sai ao primeiro erro
+      
+      # 1. Criar estrutura de diretórios
       mkdir -p .metagpt metagpt/workspace
+      echo "📂 Estrutura de diretórios criada"
       
-      # Baixar imagem Docker
-      docker pull metagpt/metagpt:latest
+      # 2. Baixar imagem Docker com feedback visual
+      echo "⬇️ Baixando imagem MetaGPT (isso pode levar alguns minutos)..."
+      docker pull --progress=plain metagpt/metagpt:latest 2>&1 | tee /tmp/docker-pull.log
       
-      # Criar arquivo de configuração seguro
-      if [ ! -f .metagpt/config2.yaml ]; then
-        cat << EOF > .metagpt/config2.yaml.example
-        llm:
-          api_type: "openai"
-          api_key: "hf_SUA_CHAVE_AQUI"
-          model: "Qwen/QwQ-32B"
-          base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
-        EOF
-        
-        cp .metagpt/config2.yaml.example .metagpt/config2.yaml
-        sed -i "s|hf_SUA_CHAVE_AQUI|${HUGGINGFACE_QWQ32B}|g" .metagpt/config2.yaml
+      # 3. Verificar download da imagem
+      if ! docker image inspect metagpt/metagpt:latest &>/dev/null; then
+        echo "❌ Falha no download da imagem Docker!"
+        exit 1
       fi
       
-      # Proteger arquivo de configuração
-      echo ".metagpt/config2.yaml" >> .gitignore
-      git rm --cached .metagpt/config2.yaml >/dev/null 2>&1
+      # 4. Configuração segura da API Key
+      echo "🔑 Configurando chave API..."
+      cat << EOF > .metagpt/config2.yaml
+      llm:
+        api_type: "openai"
+        api_key: "${HUGGINGFACE_QWQ32B:-CHAVE_NAO_CONFIGURADA}"
+        model: "Qwen/QwQ-32B"
+        base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
+      EOF
       
+      # 5. Validar substituição da chave
+      if grep -q "CHAVE_NAO_CONFIGURADA" .metagpt/config2.yaml; then
+        echo "❌ ERRO: Variável HUGGINGFACE_QWQ32B não encontrada!"
+        echo "Configure em: https://gitpod.io/user/variables"
+        exit 1
+      fi
+      
+      # 6. Sinalizar conclusão
       gp sync-done docker_ready
+      echo "✅ Configuração Docker concluída!"
 
   - name: MetaGPT Runner
     command: |
+      # Esperar conclusão do setup
+      echo "⏳ Aguardando preparação do ambiente..."
       gp sync-await docker_ready
-      echo -e "\n\033[32m✅ Configuração segura!\033[0m"
-      echo -e "Arquivo de configuração \033[33mexcluído do controle do Git\033[0m"
       
-      echo -e "\nalias metagpt='docker run -it --rm --privileged \\
-        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \\
-        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \\
+      # Configurar aliases
+      echo -e "\n📦 Configurando comandos rápidos..."
+      echo "alias metagpt='docker run -it --rm --privileged \
+        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \
+        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \
         metagpt/metagpt:latest metagpt'" >> ~/.bashrc
       
       source ~/.bashrc
+      
+      # Mensagem final
+      echo -e "\n\033[32m🚀 Ambiente Pronto!\033[0m"
+      echo -e "Teste com: \033[36mmetagpt 'Crie um script Python simples'\033[0m"
+      echo -e "Arquivos gerados em: \033[33mmetagpt/workspace/\033[0m"
 
 ports:
   - port: 3000
