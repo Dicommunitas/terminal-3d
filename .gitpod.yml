@@ -1,4 +1,3 @@
-
 # .gitpod.yml
 tasks:
   - name: Docker Setup
@@ -10,10 +9,18 @@ tasks:
       docker pull metagpt/metagpt:latest
       
       # Configurar arquivo com modelo Qwen
+      if [ -z "${HUGGINGFACE_QWQ32B}" ]; then
+        echo "AVISO: A variável de ambiente HUGGINGFACE_QWQ32B não está definida!"
+        echo "O arquivo config2.yaml será criado sem a API key."
+        API_KEY_VALUE="" # Define como vazia para não quebrar o YAML
+      else
+        API_KEY_VALUE="${HUGGINGFACE_QWQ32B}"
+      fi
+
       cat << EOF > .metagpt/config2.yaml
       llm:
         api_type: "openai"
-        api_key: "${HUGGINGFACE_QWQ32B}"
+        api_key: "${API_KEY_VALUE}" # Usando a variável intermediária
         model: "Qwen/QwQ-32B"
         base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
       EOF
@@ -23,31 +30,65 @@ tasks:
 
   - name: MetaGPT Runner
     command: |
+      # Desabilitar a expansão de histórico do Bash para evitar erros com '!'
+      set +o histexpand
+
+      echo "" # Linha em branco para espaçamento
+      echo "⏳ Aguardando a configuração do Docker ser finalizada..."
+      echo "Isso pode levar alguns instantes."
+      
       # Esperar Docker estar pronto
       gp sync-await docker_ready
       
+      # Limpar a tela para uma saída mais limpa após a espera (opcional)
+      clear 
+      
       # Mensagem de boas-vindas
-      echo -e "\n\033[32m✅ Ambiente Configurado!\033[0m"
+      # Escapar o '!' para garantir, mesmo com histexpand desabilitado
+      echo -e "\n\033[32m✅ Ambiente Configurado\!\033[0m"
       echo -e "Modelo: \033[36mQwen/QwQ-32B\033[0m"
-      echo -e "API Key: ${HUGGINGFACE_QWQ32B:+*****}"
+      
+      if [ -n "${HUGGINGFACE_QWQ32B}" ]; then
+        echo -e "API Key: Configurada (oculta)"
+      else
+        echo -e "API Key: \033[31mNÃO CONFIGURADA\033[0m (verifique as variáveis de ambiente do Gitpod)"
+      fi
+
       echo -e "\n\033[1mComo usar:\033[0m"
       echo -e "1. Executar comando direto:"
       echo -e "   \033[36mmetagpt 'sua pergunta'\033[0m"
       echo -e "2. Acessar arquivos gerados:"
-      echo -e "   \033[36mcd metagpt/workspace && ls\033[0m"
+      echo -e "   \033[36mcd .metagpt/workspace && ls\033[0m" # Caminho corrigido para .metagpt
       
-      # Criar alias para o comando
-      echo -e "\nalias metagpt='docker run -it --rm --privileged \\
-        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \\
-        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \\
-        metagpt/metagpt:latest metagpt'" >> ~/.bashrc
+      # Criar ou atualizar alias para o comando
+      touch ~/.bashrc # Garante que o arquivo .bashrc exista
+      ALIAS_DEFINITION="alias metagpt='docker run -it --rm --privileged -v \"\$(pwd)/.metagpt/config2.yaml\":/app/metagpt/config/config2.yaml -v \"\$(pwd)/.metagpt/workspace\":/app/metagpt/workspace metagpt/metagpt:latest metagpt'"
+      
+      # Remove qualquer linha de alias 'metagpt' existente para evitar duplicatas ou definições antigas
+      if grep -q "^alias metagpt=" ~/.bashrc; then
+          sed -i '/^alias metagpt=/d' ~/.bashrc
+      fi
+      # Adiciona a nova definição do alias
+      echo -e "\n${ALIAS_DEFINITION}" >> ~/.bashrc
       
       source ~/.bashrc
 
-      # Forçar substituição da chave caso o arquivo já exista
-      sed -i "s|api_key:.*|api_key: \"${HUGGINGFACE_QWQ32B}\"|g" .metagpt/config2.yaml
+      # Forçar substituição/confirmação da chave API no arquivo config2.yaml
+      # Isso garante que a chave esteja correta mesmo que o arquivo já existisse de alguma forma.
+      if [ -n "${HUGGINGFACE_QWQ32B}" ]; then
+        # Usar aspas duplas ao redor da variável no sed para o valor YAML
+        sed -i "s|api_key:.*|api_key: \"${HUGGINGFACE_QWQ32B}\"|g" .metagpt/config2.yaml
+      else
+        # Se a chave não estiver definida, garante que o campo api_key fique vazio no YAML
+        sed -i "s|api_key:.*|api_key: \"\"|g" .metagpt/config2.yaml
+        echo "AVISO: Chave API HUGGINGFACE_QWQ32B não encontrada. O campo api_key no config2.yaml foi definido como vazio."
+      fi
+
+      # Opcional: Reabilitar histexpand se você for deixar este terminal interativo
+      # e quiser o comportamento padrão do histórico.
+      # set -o histexpand
 
 ports:
   - port: 3000
-    onOpen: open-preview
+    onOpen: open-preview # Se não houver um serviço web na porta 3000, isso pode ser removido ou alterado.
     visibility: public
