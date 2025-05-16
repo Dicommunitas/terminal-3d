@@ -1,19 +1,14 @@
-# .gitpod.yml
 tasks:
   - name: Docker Setup
-    init: |
+    command: |
       set -ex
       mkdir -p .metagpt metagpt/workspace
       echo "📂 Estrutura de diretórios criada"
-      
       echo "⬇️ Baixando imagem MetaGPT..."
       docker pull --progress=plain metagpt/metagpt:latest 2>&1 | tee /tmp/docker-pull.log
-      
       if ! docker image inspect metagpt/metagpt:latest &>/dev/null; then
-        echo "❌ Falha no download da imagem Docker!"
-        exit 1
+        echo "❌ Falha no download da imagem Docker!" && exit 1
       fi
-      
       echo "🔑 Configurando chave API..."
       cat << 'EOF' > .metagpt/config2.yaml
       llm:
@@ -22,31 +17,27 @@ tasks:
         model: "Qwen/QwQ-32B"
         base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
       EOF
-      
       sed -i "s/CHAVE_NAO_CONFIGURADA/${HUGGINGFACE_QWQ32B}/g" .metagpt/config2.yaml
-      
       if grep -q "CHAVE_NAO_CONFIGURADA" .metagpt/config2.yaml; then
-        echo "❌ ERRO: Configure a variável HUGGINGFACE_QWQ32B!"
-        echo "URL: https://gitpod.io/user/variables"
-        exit 1
+        echo "❌ ERRO: Configure a variável HUGGINGFACE_QWQ32B!" \
+             "URL: https://gitpod.io/user/variables" && exit 1
       fi
-      
       gp sync-done docker_ready
       echo "✅ Configuração Docker concluída!"
 
   - name: MetaGPT Runner
+    init: gp sync-await docker_ready
     command: |
-      gp sync-await docker_ready
-      echo -e "\\n📦 Configurando comandos rápidos..."
-      echo "alias metagpt='docker run -it --rm --privileged \\
-        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \\
-        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \\
+      echo -e "\n📦 Configurando comandos rápidos..."
+      echo "alias metagpt='docker run -it --rm --privileged \
+        -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \
+        -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \
         metagpt/metagpt:latest metagpt'" >> ~/.bashrc
-      
       source ~/.bashrc
-      echo -e "\\n\\033[32m🚀 Ambiente Pronto!\\033[0m"
-      echo -e "Teste com: \\033[36mmetagpt 'Crie um script Python simples'\\033[0m"
-      echo -e "Arquivos gerados em: \\033[33mmetagpt/workspace/\\033[0m"
+      echo -e "\n\033[32m🚀 Ambiente Pronto!\033[0m"
+      echo -e "Teste com: \033[36mmetagpt 'Crie um script Python simples'\033[0m"
+      echo -e "Arquivos gerados em: \033[33mmetagpt/workspace/\033[0m"
+    openMode: split-right
 
 ports:
   - port: 3000
