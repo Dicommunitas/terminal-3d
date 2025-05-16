@@ -2,40 +2,38 @@
 tasks:
   - name: Docker Setup
     init: |
-      # Criar estrutura de diretórios dentro do repositório
-      mkdir -p .metagpt/workspace
+      # Criar estrutura de diretórios
+      mkdir -p .metagpt metagpt/workspace
       
-      # Baixar imagem Docker oficial
+      # Baixar imagem Docker
       docker pull metagpt/metagpt:latest
       
-      # Configurar arquivo com modelo Qwen
-      cat << EOF > .metagpt/config2.yaml
-      llm:
-        api_type: "openai"
-        api_key: "${HUGGINGFACE_QWQ32B}"
-        model: "Qwen/QwQ-32B"
-        base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
-      EOF
+      # Criar arquivo de configuração seguro
+      if [ ! -f .metagpt/config2.yaml ]; then
+        cat << EOF > .metagpt/config2.yaml.example
+        llm:
+          api_type: "openai"
+          api_key: "hf_SUA_CHAVE_AQUI"
+          model: "Qwen/QwQ-32B"
+          base_url: "https://router.huggingface.co/hf-inference/models/Qwen/QwQ-32B/v1"
+        EOF
+        
+        cp .metagpt/config2.yaml.example .metagpt/config2.yaml
+        sed -i "s|hf_SUA_CHAVE_AQUI|${HUGGINGFACE_QWQ32B}|g" .metagpt/config2.yaml
+      fi
       
-      # Sinalizar conclusão
+      # Proteger arquivo de configuração
+      echo ".metagpt/config2.yaml" >> .gitignore
+      git rm --cached .metagpt/config2.yaml >/dev/null 2>&1
+      
       gp sync-done docker_ready
 
   - name: MetaGPT Runner
     command: |
-      # Esperar Docker estar pronto
       gp sync-await docker_ready
+      echo -e "\n\033[32m✅ Configuração segura!\033[0m"
+      echo -e "Arquivo de configuração \033[33mexcluído do controle do Git\033[0m"
       
-      # Mensagem de boas-vindas
-      echo -e "\n\033[32m✅ Ambiente Configurado!\033[0m"
-      echo -e "Modelo: \033[36mQwen/QwQ-32B\033[0m"
-      echo -e "API Key: ${HUGGINGFACE_QWQ32B:+*****}"
-      echo -e "\n\033[1mComo usar:\033[0m"
-      echo -e "1. Executar comando direto:"
-      echo -e "   \033[36mmetagpt 'sua pergunta'\033[0m"
-      echo -e "2. Acessar arquivos gerados:"
-      echo -e "   \033[36mcd metagpt/workspace && ls\033[0m"
-      
-      # Criar alias para o comando
       echo -e "\nalias metagpt='docker run -it --rm --privileged \\
         -v $(pwd)/.metagpt/config2.yaml:/app/metagpt/config/config2.yaml \\
         -v $(pwd)/metagpt/workspace:/app/metagpt/workspace \\
